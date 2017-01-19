@@ -1,3 +1,4 @@
-*.xml
+*.txt
 resources
 .idea
+__pycache__
