@@ -5,21 +5,18 @@ discardElements = ['gallery', 'timeline', 'noinclude', 'pre', 'table', 'tr', 'td
                    'input', 'select', 'option', 'textarea', 'ul', 'li', 'ol', 'dl', 'dt', 'dd', 'menu', 'dir',
                    'ref', 'references', 'img', 'imagemap', 'source', 'small', 'sub', 'sup', 'indicator']
 
-
 # Match HTML comments
 comment = re.compile(r'<!--.*?-->', re.DOTALL)
 # The buggy template {{Template:T}} has a comment terminating with just "->"
 
-
 selfClosingTags = ('br', 'hr', 'nobr', 'ref', 'references', 'nowiki')
 
 # These tags are dropped, keeping their content.
-# handle 'a' separately, depending on keepLinks
 ignoredTags = (
     'abbr', 'b', 'big', 'blockquote', 'center', 'cite', 'em',
     'font', 'h1', 'h2', 'h3', 'h4', 'hiero', 'i', 'kbd',
     'p', 'plaintext', 's', 'span', 'strike', 'strong',
-    'tt', 'u', 'var'
+    'tt', 'u', 'var', 'a', 'br', 'small'
 )
 
 placeholder_tags = {'math': 'formula', 'code': 'codice'}
@@ -89,136 +86,18 @@ EXT_IMAGE_REGEX = re.compile(
     re.X | re.S | re.U)
 
 
-class MagicWords(object):
-    """
-    One copy in each Extractor.
+switches = ['__NOTOC__', '__FORCETOC__', '__TOC__', '__TOC__', '__NEWSECTIONLINK__', '__NONEWSECTIONLINK__',
+            '__NOGALLERY__', '__HIDDENCAT__', '__NOCONTENTCONVERT__', '__NOCC__', '__NOTITLECONVERT__', '__NOTC__',
+            '__START__', '__END__', '__INDEX__', '__NOINDEX__', '__STATICREDIRECT__', '__DISAMBIG__']
 
-    @see https://doc.wikimedia.org/mediawiki-core/master/php/MagicWord_8php_source.html
-    """
-    names = [
-        '!',
-        'currentmonth',
-        'currentmonth1',
-        'currentmonthname',
-        'currentmonthnamegen',
-        'currentmonthabbrev',
-        'currentday',
-        'currentday2',
-        'currentdayname',
-        'currentyear',
-        'currenttime',
-        'currenthour',
-        'localmonth',
-        'localmonth1',
-        'localmonthname',
-        'localmonthnamegen',
-        'localmonthabbrev',
-        'localday',
-        'localday2',
-        'localdayname',
-        'localyear',
-        'localtime',
-        'localhour',
-        'numberofarticles',
-        'numberoffiles',
-        'numberofedits',
-        'articlepath',
-        'pageid',
-        'sitename',
-        'server',
-        'servername',
-        'scriptpath',
-        'stylepath',
-        'pagename',
-        'pagenamee',
-        'fullpagename',
-        'fullpagenamee',
-        'namespace',
-        'namespacee',
-        'namespacenumber',
-        'currentweek',
-        'currentdow',
-        'localweek',
-        'localdow',
-        'revisionid',
-        'revisionday',
-        'revisionday2',
-        'revisionmonth',
-        'revisionmonth1',
-        'revisionyear',
-        'revisiontimestamp',
-        'revisionuser',
-        'revisionsize',
-        'subpagename',
-        'subpagenamee',
-        'talkspace',
-        'talkspacee',
-        'subjectspace',
-        'subjectspacee',
-        'talkpagename',
-        'talkpagenamee',
-        'subjectpagename',
-        'subjectpagenamee',
-        'numberofusers',
-        'numberofactiveusers',
-        'numberofpages',
-        'currentversion',
-        'rootpagename',
-        'rootpagenamee',
-        'basepagename',
-        'basepagenamee',
-        'currenttimestamp',
-        'localtimestamp',
-        'directionmark',
-        'contentlanguage',
-        'numberofadmins',
-        'cascadingsources',
-    ]
-
-    def __init__(self):
-        self.values = {'!': '|'}
-
-    def __getitem__(self, name):
-        return self.values.get(name)
-
-    def __setitem__(self, name, value):
-        self.values[name] = value
-
-    switches = (
-        '__NOTOC__',
-        '__FORCETOC__',
-        '__TOC__',
-        '__TOC__',
-        '__NEWSECTIONLINK__',
-        '__NONEWSECTIONLINK__',
-        '__NOGALLERY__',
-        '__HIDDENCAT__',
-        '__NOCONTENTCONVERT__',
-        '__NOCC__',
-        '__NOTITLECONVERT__',
-        '__NOTC__',
-        '__START__',
-        '__END__',
-        '__INDEX__',
-        '__NOINDEX__',
-        '__STATICREDIRECT__',
-        '__DISAMBIG__'
-    )
-
-magicWordsRE = re.compile('|'.join(MagicWords.switches))
+magicWordsRE = re.compile('|'.join(switches))
 
 # Match ignored tags
 ignored_tag_patterns = []
 
-
-def ignoreTag(tag):
-    global ignored_tag_patterns
-    left = re.compile(r'<%s\b.*?>' % tag, re.IGNORECASE | re.DOTALL)  # both <ref> and <reference>
-    right = re.compile(r'</\s*%s>' % tag, re.IGNORECASE)
-    ignored_tag_patterns.append((left, right))
+left = lambda tag: re.compile(r'<%s\b.*?>' % tag, re.IGNORECASE | re.DOTALL)  # both <ref> and <reference>
+right = lambda tag: re.compile(r'</\s*%s>' % tag, re.IGNORECASE)
 
 
 for tag in ignoredTags:
-    ignoreTag(tag)
-
-ignoreTag('a')
+    ignored_tag_patterns.append((left(tag), right(tag)))
