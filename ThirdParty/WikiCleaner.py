@@ -157,7 +157,7 @@ def replaceInternalLinks(text):
     # call this after removal of external links, so we need not worry about
     # triple closing ]]].
     cur = 0
-    res = list()
+    res = ''
     for s, e in findBalanced(text):
         m = tailRE.match(text, e)
         if m:
