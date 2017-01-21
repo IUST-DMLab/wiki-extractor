@@ -12,9 +12,9 @@ comment = re.compile(r'<!--.*?-->', re.DOTALL)
 selfClosingTags = ('br', 'hr', 'nobr', 'ref', 'references', 'nowiki')
 
 # These tags are dropped, keeping their content.
-ignoredTags = ['abbr', 'b', 'big', 'blockquote', 'center', 'cite', 'em', 'font', 'h1', 'h2', 'h3', 'h4', 'hiero',
-               'i', 'kbd', 'p', 'plaintext', 's', 'span', 'strike', 'strong', 'tt', 'u', 'var', 'a', 'br', 'small',
-               'div', 'td', 'nowiki', 'ref', 'sup']
+ignoredTags = ['abbr', 'b', 'big', 'blockquote', 'center', 'cite', 'em', 'font', 'h1', 'h2', 'h3', 'h4',
+               'hiero', 'i', 'kbd', 'p', 'plaintext', 's', 'span', 'strike', 'strong', 'tt', 'u', 'var', 'a',
+               'br', 'small', 'div', 'td', 'nowiki', 'ref', 'sup']
 
 placeholder_tags = {'math': 'formula', 'code': 'codice'}
 

@@ -4,7 +4,7 @@ import json
 import logging
 from os.path import join
 
-import mwparserfromhell as mwpfh
+import wikitextparser as wtp
 from bs4 import BeautifulSoup
 
 import Config
@@ -93,14 +93,20 @@ def extract_infoboxes(input_filename, output_filename):
     for page in get_wikipedia_pages(filename=input_filename):
         parsed_page = parse_page(page)
         pages_counter += 1
+
+        if pages_counter % Config.logging_interval == 0:
+            logging_information_extraction(pages_counter, input_filename, 'infoboxes')
+            gc.collect()
+
         if parsed_page.ns.text != '0':
             continue
+        text = parsed_page.revision.find('text').text
         try:
-            wiki_text = mwpfh.parse(parsed_page.revision.find('text').text)
+            wiki_text = wtp.parse(text)
         except:
             print('Exception in Parsing: %s in %s!' % (parsed_page.title.text, input_filename))
             continue
-        templates = wiki_text.filter_templates()
+        templates = wiki_text.templates
         for template in templates:
             template_name = clean(str(template.name))
             if 'Infobox' in template_name or 'جعبه اطلاعات' in template_name:
@@ -113,7 +119,7 @@ def extract_infoboxes(input_filename, output_filename):
                     if infobox_name not in infoboxes_dict_clean[page_name]:
                         infoboxes_dict_clean[page_name][infobox_name] = dict()
                         infoboxes_dict_unclean[page_name][infobox_name] = dict()
-                    for param in template.params:
+                    for param in template.arguments:
                         param_name = clean(str(param.name))
                         param_value = clean(str(param.value))
                         if param_value:
@@ -121,9 +127,7 @@ def extract_infoboxes(input_filename, output_filename):
                             infoboxes_dict_unclean[page_name][infobox_name][param_name] = str(param.value)
         del templates
         del wiki_text
-        if pages_counter % Config.logging_interval == 0:
-            logging_information_extraction(pages_counter, input_filename, 'infoboxes')
-            gc.collect()
+
 
     logging_information_extraction(pages_counter, input_filename, 'infoboxes')
     infoboxes_json_clean = json.dumps(infoboxes_dict_clean, ensure_ascii=False, indent=2, sort_keys=True)
