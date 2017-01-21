@@ -96,9 +96,8 @@ def extract_infoboxes(input_filename, output_filename):
             continue
         try:
             wiki_text = mwpfh.parse(parsed_page.revision.find('text').text)
-        except Exception as e:
-            logging.warning('Exception in Parsing: %s in %s!' % (parsed_page.title.text, input_filename))
-            logging.error(str(e))
+        except:
+            print('Exception in Parsing: %s in %s!' % (parsed_page.title.text, input_filename))
         templates = wiki_text.filter_templates()
         for template in templates:
             template_name = clean(str(template.name))
