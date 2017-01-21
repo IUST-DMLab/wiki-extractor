@@ -222,7 +222,6 @@ def transform(wikitext):
     Transforms wiki markup.
     @see https://www.mediawiki.org/wiki/Help:Formatting
     """
-    global nowiki
     # look for matching <nowiki>...</nowiki>
     res = ''
     cur = 0
@@ -290,10 +289,12 @@ def clean(wikitext):
     """
     Removes irrelevant parts from :param: text.
     """
-    global comment, selfClosing_tag_patterns, ignored_tag_patterns
-    global discardElements, placeholder_tag_patterns, spaces, dots
     text = transform(wikitext)
     text = wiki2text(text)
+    # Drop discarded elements
+    for tag in discardElements:
+        text = dropNested(text, r'<\s*%s\b[^>/]*>' % tag, r'<\s*/\s*%s>' % tag)
+
     # Collect spans
     spans = []
 
@@ -315,10 +316,6 @@ def clean(wikitext):
 
     # Bulk remove all spans
     text = dropSpans(spans, text)
-
-    # Drop discarded elements
-    for tag in discardElements:
-        text = dropNested(text, r'<\s*%s\b[^>/]*>' % tag, r'<\s*/\s*%s>' % tag)
 
     # Turn into text what is left (&amp;nbsp;) and <syntaxhighlight>
     text = unescape(text)

@@ -92,9 +92,8 @@ magicWordsRE = re.compile('|'.join(switches))
 # Match ignored tags
 ignored_tag_patterns = []
 
-left = lambda tag: re.compile(r'<%s\b.*?>' % tag, re.IGNORECASE | re.DOTALL)  # both <ref> and <reference>
-right = lambda tag: re.compile(r'</\s*%s>' % tag, re.IGNORECASE)
-
 
 for tag in ignoredTags:
-    ignored_tag_patterns.append((left(tag), right(tag)))
+    left = re.compile(r'<%s\b.*?>' % tag, re.IGNORECASE | re.DOTALL)  # both <ref> and <reference>
+    right = re.compile(r'</\s*%s>' % tag, re.IGNORECASE)
+    ignored_tag_patterns.append((left, right))
