@@ -87,7 +87,8 @@ def parse_page(xml_page):
 
 
 def extract_infoboxes(input_filename, output_filename):
-    infoboxes_dict = dict()
+    infoboxes_dict_clean = dict()
+    infoboxes_dict_unclean = dict()
     pages_counter = 0
     for page in get_wikipedia_pages(filename=input_filename):
         parsed_page = parse_page(page)
@@ -105,13 +106,19 @@ def extract_infoboxes(input_filename, output_filename):
             if 'Infobox' in template_name or 'جعبه اطلاعات' in template_name:
                 page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
                 infobox_name = template_name.replace('Infobox', '').replace('جعبه اطلاعات', '').strip()
-                infoboxes_dict[page_name] = dict()
-                infoboxes_dict[page_name][infobox_name] = dict()
-                for param in template.params:
-                    param_name = clean(str(param.name))
-                    param_value = clean(str(param.value))
-                    if param_value:
-                        infoboxes_dict[page_name][infobox_name][param_name] = param_value
+                if infobox_name:
+                    if page_name not in infoboxes_dict_clean:
+                        infoboxes_dict_clean[page_name] = dict()
+                        infoboxes_dict_unclean[page_name] = dict()
+                    if infobox_name not in infoboxes_dict_clean[page_name]:
+                        infoboxes_dict_clean[page_name][infobox_name] = dict()
+                        infoboxes_dict_unclean[page_name][infobox_name] = dict()
+                    for param in template.params:
+                        param_name = clean(str(param.name))
+                        param_value = clean(str(param.value))
+                        if param_value:
+                            infoboxes_dict_clean[page_name][infobox_name][param_name] = param_value
+                            infoboxes_dict_unclean[page_name][infobox_name][param_name] = str(param.value)
         del templates
         del wiki_text
         if pages_counter % Config.logging_interval == 0:
@@ -119,12 +126,17 @@ def extract_infoboxes(input_filename, output_filename):
             gc.collect()
 
     logging_information_extraction(pages_counter, input_filename, 'infoboxes')
-    infoboxes_json = json.dumps(infoboxes_dict, ensure_ascii=False, indent=2, sort_keys=True)
-    infoboxes_file = open(output_filename, 'w+', encoding='utf8')
+    infoboxes_json_clean = json.dumps(infoboxes_dict_clean, ensure_ascii=False, indent=2, sort_keys=True)
+    infoboxes_file_clean = open(output_filename, 'w+', encoding='utf8')
     logging_file_operations(output_filename, 'Opened')
-    infoboxes_file.write(infoboxes_json)
-    infoboxes_file.close()
+    infoboxes_file_clean.write(infoboxes_json_clean)
+    infoboxes_file_clean.close()
     logging_file_operations(output_filename, 'Closed')
+
+    infoboxes_json_unclean = json.dumps(infoboxes_dict_unclean, ensure_ascii=False, indent=2, sort_keys=True)
+    infoboxes_file_unclean = open(output_filename + '.unclean', 'w+', encoding='utf8')
+    infoboxes_file_unclean.write(infoboxes_json_unclean)
+    infoboxes_file_unclean.close()
 
 
 def extract_ids(input_filename, output_filename):
