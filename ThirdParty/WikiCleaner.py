@@ -100,7 +100,9 @@ def unescape(text):
 def transform1(text):
     """Transform text not containing <nowiki>"""
     # Drop transclusions (template, parser functions)
-    return dropNested(text, r'{{', r'}}')
+    text = dropNested(text, r'{{{', r'}}}')
+    text = dropNested(text, r'{{', r'}}')
+    return text
 
 
 def findBalanced(text, openDelim=['[['], closeDelim=[']]']):
@@ -249,6 +251,7 @@ def wiki2text(text):
 
     # Drop tables
     # first drop residual templates, or else empty parameter |} might look like end of table.
+    text = dropNested(text, r'{{{', r'}}}')
     text = dropNested(text, r'{{', r'}}')
     text = dropNested(text, r'{\|', r'\|}')
 
