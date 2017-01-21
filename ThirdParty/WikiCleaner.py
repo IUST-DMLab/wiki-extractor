@@ -157,7 +157,7 @@ def replaceInternalLinks(text):
     # call this after removal of external links, so we need not worry about
     # triple closing ]]].
     cur = 0
-    res = ''
+    res = list()
     for s, e in findBalanced(text):
         m = tailRE.match(text, e)
         if m:
@@ -173,16 +173,9 @@ def replaceInternalLinks(text):
             title = inner
         else:
             title = inner[:pipe].rstrip()
-            # find last |
-            curp = pipe + 1
-            for s1, e1 in findBalanced(inner):
-                last = inner.rfind('|', curp, s1)
-                if last >= 0:
-                    pipe = last  # advance
-                curp = e1
-        res += text[cur:s] + ' kbr:' + title.replace(' ', '_') + trail
+        res += list(text[cur:s]) + list('kbr:' + title.replace(' ', '_')) + list(trail)
         cur = end
-    return res + text[cur:]
+    return res + list(text[cur:])
 
 
 def replaceExternalLinks(text):
