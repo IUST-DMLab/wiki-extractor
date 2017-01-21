@@ -173,9 +173,9 @@ def replaceInternalLinks(text):
             title = inner
         else:
             title = inner[:pipe].rstrip()
-        res += list(text[cur:s]) + list('kbr:' + title.replace(' ', '_')) + list(trail)
+        res += text[cur:s] + ' kbr:' + title.replace(' ', '_') + ' ' + trail
         cur = end
-    return res + list(text[cur:])
+    return res + text[cur:]
 
 
 def replaceExternalLinks(text):
