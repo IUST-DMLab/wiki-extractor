@@ -2,7 +2,8 @@ import bz2
 import gc
 import json
 import logging
-from os.path import join
+import os
+from os.path import join, exists
 
 import wikitextparser as wtp
 from bs4 import BeautifulSoup
@@ -27,6 +28,12 @@ def logging_information_extraction(pages_number, filename, info):
 
 def get_information_filename(info_dir, file_number):
     return join(info_dir, str(file_number)+'.json')
+
+
+def create_directory(directory):
+    if not exists(directory):
+        logging.info(' Create All Directories in Path %s' % directory)
+        os.makedirs(directory)
 
 
 def get_wikipedia_pages(filename):
@@ -55,28 +62,28 @@ def get_wikipedia_pages(filename):
     logging_file_operations(filename, 'Closed')
 
 
-def extract_wikipedia_pages(filename):
+def extract_wikipedia_pages(input_filename, output_dir):
     pages_counter = 0
     file_number = int(pages_counter/Config.extracted_pages_per_file)
-    dump_filename = join(Config.extracted_pages_dir, str(file_number))
-    extracted_pages_file = open(dump_filename, 'w+')
-    logging_file_operations(dump_filename, 'Opened')
+    extracted_filename = join(output_dir, str(file_number))
+    extracted_pages_file = open(extracted_filename, 'w+')
+    logging_file_operations(extracted_filename, 'Opened')
 
-    for page in get_wikipedia_pages(filename):
+    for page in get_wikipedia_pages(input_filename):
         extracted_pages_file.write(page)
         pages_counter += 1
         if pages_counter % Config.extracted_pages_per_file == 0:
-            logging_pages_extraction(pages_counter, dump_filename)
+            logging_pages_extraction(pages_counter, extracted_filename)
             extracted_pages_file.close()
-            logging_file_operations(dump_filename, 'Closed')
+            logging_file_operations(extracted_filename, 'Closed')
             file_number = int(pages_counter/Config.extracted_pages_per_file)
-            dump_filename = join(Config.extracted_pages_dir, str(file_number))
-            extracted_pages_file = open(dump_filename, 'w+')
-            logging_file_operations(dump_filename, 'Opened')
+            extracted_filename = join(output_dir, str(file_number))
+            extracted_pages_file = open(extracted_filename, 'w+')
+            logging_file_operations(extracted_filename, 'Opened')
 
-    logging_pages_extraction(pages_counter, dump_filename)
+    logging_pages_extraction(pages_counter, extracted_filename)
     extracted_pages_file.close()
-    logging_file_operations(dump_filename, 'Closed')
+    logging_file_operations(extracted_filename, 'Closed')
     logging.info('Page Extraction Finished! Number of All Extracted Pages: %d' % pages_counter)
 
 
@@ -101,11 +108,7 @@ def extract_infoboxes(input_filename, output_filename):
         if parsed_page.ns.text != '0':
             continue
         text = parsed_page.revision.find('text').text
-        try:
-            wiki_text = wtp.parse(text)
-        except:
-            print('Exception in Parsing: %s in %s!' % (parsed_page.title.text, input_filename))
-            continue
+        wiki_text = wtp.parse(text)
         templates = wiki_text.templates
         for template in templates:
             template_name = clean(str(template.name))
@@ -127,7 +130,6 @@ def extract_infoboxes(input_filename, output_filename):
                             infoboxes_dict_unclean[page_name][infobox_name][param_name] = str(param.value)
         del templates
         del wiki_text
-
 
     logging_information_extraction(pages_counter, input_filename, 'infoboxes')
     infoboxes_json_clean = json.dumps(infoboxes_dict_clean, ensure_ascii=False, indent=2, sort_keys=True)
