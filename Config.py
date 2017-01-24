@@ -11,6 +11,7 @@ extracted_pages_articles_dir = join(extracted_dir, 'pages-articles')
 extracted_pages_meta_current_dir = join(extracted_dir, 'pages-meta-current')
 extracted_ids_dir = join(extracted_dir, 'ids')
 extracted_infoboxes_dir = join(extracted_dir, 'infoboxes')
+extracted_abstracts_dir = join(extracted_dir, 'abstracts')
 
 fawiki_latest_pages_articles_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pages-articles.xml.bz2')
 fawiki_latest_pages_meta_current_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pages-meta-current.xml.bz2')

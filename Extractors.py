@@ -31,6 +31,17 @@ def extract_infoboxes():
                             for file_name in extracted_pages_files)
 
 
+def extract_abstracts():
+    extracted_pages_files = os.listdir(Config.extracted_pages_articles_dir)
+    Utils.create_directory(Config.extracted_abstracts_dir)
+    extracted_abstracts_files = os.listdir(Config.extracted_abstracts_dir)
+    if extracted_pages_files and not extracted_abstracts_files:
+        Parallel(n_jobs=-1)(delayed(Utils.extract_abstracts)
+                            (join(Config.extracted_pages_articles_dir, file_name),
+                             Utils.get_information_filename(Config.extracted_abstracts_dir, file_name))
+                            for file_name in extracted_pages_files)
+
+
 def extract_ids():
     extracted_pages_files = os.listdir(Config.extracted_pages_meta_current_dir)
     Utils.create_directory(Config.extracted_ids_dir)

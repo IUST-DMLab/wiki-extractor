@@ -165,3 +165,45 @@ def extract_ids(input_filename, output_filename):
     ids_file.write(ids_json)
     ids_file.close()
     logging_file_operations(output_filename, 'Closed')
+
+
+def extract_abstracts(input_filename, output_filename):
+    abstracts_dict_clean = dict()
+    abstracts_dict_unclean = dict()
+
+    pages_counter = 0
+    for page in get_wikipedia_pages(filename=input_filename):
+        parsed_page = parse_page(page)
+        pages_counter += 1
+
+        if pages_counter % Config.logging_interval == 0:
+            logging_information_extraction(pages_counter, input_filename, 'abstracts')
+            gc.collect()
+
+        if parsed_page.ns.text != '0':
+            continue
+
+        text = parsed_page.revision.find('text').text
+        wiki_text = wtp.parse(text)
+        first_section = wiki_text.sections[0]
+        abstract = clean(str(first_section), specify_wikilinks=False)
+        if abstract:
+            page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
+            abstracts_dict_clean[page_name] = abstract
+            abstracts_dict_unclean[page_name] = str(first_section)
+
+        del wiki_text
+        del first_section
+
+    logging_information_extraction(pages_counter, input_filename, 'abstracts')
+    abstracts_json_clean = json.dumps(abstracts_dict_clean, ensure_ascii=False, indent=2, sort_keys=True)
+    abstracts_file_clean = open(output_filename, 'w+', encoding='utf8')
+    logging_file_operations(output_filename, 'Opened')
+    abstracts_file_clean.write(abstracts_json_clean)
+    abstracts_file_clean.close()
+    logging_file_operations(output_filename, 'Closed')
+
+    abstracts_json_unclean = json.dumps(abstracts_dict_unclean, ensure_ascii=False, indent=2, sort_keys=True)
+    abstracts_file_unclean = open(output_filename + '.unclean', 'w+', encoding='utf8')
+    abstracts_file_unclean.write(abstracts_json_unclean)
+    abstracts_file_unclean.close()

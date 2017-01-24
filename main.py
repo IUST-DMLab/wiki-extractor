@@ -1,10 +1,11 @@
-from Extractors import extract_wikipedia_page, extract_infoboxes, extract_ids
+import Extractors
 
 
 def main():
-    extract_wikipedia_page()
-    extract_infoboxes()
-    extract_ids()
+    Extractors.extract_wikipedia_page()
+    Extractors.extract_infoboxes()
+    Extractors.extract_abstracts()
+    Extractors.extract_ids()
 
 
 if __name__ == '__main__':

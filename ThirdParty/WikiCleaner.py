@@ -146,7 +146,7 @@ def findBalanced(text, openDelim=['[['], closeDelim=[']]']):
         cur = next.end()
 
 
-def replaceInternalLinks(text):
+def replaceInternalLinks(text, specify_wikilinks):
     """
     Replaces internal links of the form:
     [[title |...|label]]trail
@@ -172,9 +172,21 @@ def replaceInternalLinks(text):
         pipe = inner.find('|')
         if pipe < 0:
             title = inner
+            label = title
         else:
             title = inner[:pipe].rstrip()
-        res += text[cur:s] + ' kbr:' + title.replace(' ', '_') + ' ' + trail
+            # find last |
+            curp = pipe + 1
+            for s1, e1 in findBalanced(inner):
+                last = inner.rfind('|', curp, s1)
+                if last >= 0:
+                    pipe = last  # advance
+                curp = e1
+            label = inner[pipe + 1:].strip()
+        if specify_wikilinks:
+            res += text[cur:s] + ' kbr:' + title.replace(' ', '_') + ' ' + trail
+        else:
+            res += text[cur:s] + label + trail
         cur = end
     return res + text[cur:]
 
@@ -232,7 +244,7 @@ def transform(wikitext):
     return res
 
 
-def wiki2text(text):
+def wiki2text(text, specify_wikilinks):
     #
     # final part of internalParse().)
     #
@@ -249,6 +261,7 @@ def wiki2text(text):
 
     # Drop tables
     # first drop residual templates, or else empty parameter |} might look like end of table.
+    text = dropNested(text, r'{{{', r'}}}')
     text = dropNested(text, r'{{', r'}}')
     text = dropNested(text, r'{\|', r'\|}')
 
@@ -262,7 +275,7 @@ def wiki2text(text):
     text = text.replace("'''", '').replace("''", '"')
 
     # replace internal links
-    text = replaceInternalLinks(text)
+    text = replaceInternalLinks(text, specify_wikilinks)
 
     # replace external links
     text = replaceExternalLinks(text)
@@ -283,12 +296,12 @@ def wiki2text(text):
     return text
 
 
-def clean(wikitext):
+def clean(wikitext, specify_wikilinks=True):
     """
     Removes irrelevant parts from :param: text.
     """
     text = transform(wikitext)
-    text = wiki2text(text)
+    text = wiki2text(text, specify_wikilinks)
     # Drop discarded elements
     for tag in discardElements:
         text = dropNested(text, r'<\s*%s\b[^>/]*>' % tag, r'<\s*/\s*%s>' % tag)
