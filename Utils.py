@@ -115,8 +115,8 @@ def extract_infoboxes(input_filename, output_filename):
             if any(name in template_name for name in Config.infobox_flags) or 'box' in template_name:
                 page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
                 infobox_name = template_name
-                for name in Config.infobox_flags:
-                    infobox_name = infobox_name.replace(name, '')
+                # for name in Config.infobox_flags:
+                #     infobox_name = infobox_name.replace(name, '')
                 infobox_name = infobox_name.strip()
                 if infobox_name:
                     if page_name not in infoboxes_dict_clean:
