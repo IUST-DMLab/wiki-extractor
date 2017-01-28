@@ -146,6 +146,18 @@ def findBalanced(text, openDelim=['[['], closeDelim=[']]']):
         cur = next.end()
 
 
+def makeInternalLink(title, label):
+    colon = title.find(':')
+    if colon > 0 and title[:colon] not in acceptedNamespaces:
+        return ''
+    if colon == 0:
+        # drop also :File:
+        colon2 = title.find(':', colon + 1)
+        if colon2 > 1 and title[colon + 1:colon2] not in acceptedNamespaces:
+            return ''
+    return label
+
+
 def replaceInternalLinks(text, specify_wikilinks):
     """
     Replaces internal links of the form:
@@ -186,7 +198,7 @@ def replaceInternalLinks(text, specify_wikilinks):
         if specify_wikilinks:
             res += text[cur:s] + ' kbr:' + title.replace(' ', '_') + ' ' + trail
         else:
-            res += text[cur:s] + label + trail
+            res += text[cur:s] + makeInternalLink(title, label) + trail
         cur = end
     return res + text[cur:]
 
@@ -261,7 +273,6 @@ def wiki2text(text, specify_wikilinks):
 
     # Drop tables
     # first drop residual templates, or else empty parameter |} might look like end of table.
-    text = dropNested(text, r'{{{', r'}}}')
     text = dropNested(text, r'{{', r'}}')
     text = dropNested(text, r'{\|', r'\|}')
 

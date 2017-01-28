@@ -1,5 +1,7 @@
 import re
 
+acceptedNamespaces = ['w', 'wiktionary', 'wikt']
+
 # Drop these elements from article text
 discardElements = ['gallery', 'timeline', 'noinclude', 'pre', 'table', 'tr', 'td', 'th', 'caption', 'div', 'form',
                    'input', 'select', 'option', 'textarea', 'ul', 'li', 'ol', 'dl', 'dt', 'dd', 'menu', 'dir',

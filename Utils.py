@@ -218,3 +218,7 @@ def extract_abstracts(input_filename, output_filename):
     abstracts_file_unclean = open(output_filename + '.unclean', 'w+', encoding='utf8')
     abstracts_file_unclean.write(abstracts_json_unclean)
     abstracts_file_unclean.close()
+
+
+def logging_database(msg):
+    logging.exception('%s Error!' % msg)
