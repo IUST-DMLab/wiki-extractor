@@ -15,3 +15,9 @@ extracted_abstracts_dir = join(extracted_dir, 'abstracts')
 
 fawiki_latest_pages_articles_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pages-articles.xml.bz2')
 fawiki_latest_pages_meta_current_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pages-meta-current.xml.bz2')
+
+
+infobox_flags = ['Infobox', 'infobox', 'Taxobox', 'taxobox', 'Drugbox', 'drugbox', 'Geobox', 'geobox',
+                 'Ionbox', 'ionbox', 'Planetbox', 'Planetbox', 'Chembox', 'chembox', 'Starbox', 'starbox',
+                 'Drugclassbox', 'drugclassbox', 'Reactionbox', 'reactionbox', 'Speciesbox', 'speciesbox',
+                 'Comiccharacterbox', 'comiccharacterbox', 'جعبه اطلاعات', 'جعبه']

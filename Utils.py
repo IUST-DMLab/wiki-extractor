@@ -112,9 +112,12 @@ def extract_infoboxes(input_filename, output_filename):
         templates = wiki_text.templates
         for template in templates:
             template_name = clean(str(template.name))
-            if 'Infobox' in template_name or 'جعبه اطلاعات' in template_name:
+            if any(name in template_name for name in Config.infobox_flags) or 'box' in template_name:
                 page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
-                infobox_name = template_name.replace('Infobox', '').replace('جعبه اطلاعات', '').strip()
+                infobox_name = template_name
+                for name in Config.infobox_flags:
+                    infobox_name = infobox_name.replace(name, '')
+                infobox_name = infobox_name.strip()
                 if infobox_name:
                     if page_name not in infoboxes_dict_clean:
                         infoboxes_dict_clean[page_name] = dict()
@@ -186,7 +189,15 @@ def extract_abstracts(input_filename, output_filename):
         text = parsed_page.revision.find('text').text
         wiki_text = wtp.parse(text)
         first_section = wiki_text.sections[0]
-        abstract = clean(str(first_section), specify_wikilinks=False)
+        abstract = first_section.string
+        if 'تغییر_مسیر' in abstract or 'تغییرمسیر' in abstract or 'REDIRECT' in abstract:
+            continue
+        templates = first_section.templates
+        for template in templates:
+            template_name = clean(str(template.name))
+            if 'Infobox' in template_name or 'جعبه اطلاعات' in template_name or 'جعبه' in template_name:
+                abstract.replace(template.string, '')
+        abstract = clean(abstract, specify_wikilinks=False)
         if abstract:
             page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
             abstracts_dict_clean[page_name] = abstract
