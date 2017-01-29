@@ -2,7 +2,7 @@ import gc
 import json
 import logging
 import os
-from os.path import join
+from os.path import join, isfile
 
 import wikitextparser as wtp
 
@@ -42,133 +42,82 @@ def extract_wikipedia_bz2_dump(input_filename, output_dir):
         logging.info('Page Extraction Finished! Number of All Extracted Pages: %d' % pages_counter)
 
 
-def extract_infoboxes(input_filename, output_filename):
-    infoboxes_dict_clean = dict()
+def extract_infoboxes_abstracts(filename):
+    infoboxes_filename = Utils.get_information_filename(Config.extracted_infoboxes_dir, filename)
+    abstracts_filename = Utils.get_information_filename(Config.extracted_abstracts_dir, filename)
+    if any([isfile(infoboxes_filename), isfile(abstracts_filename)]):
+        if isfile(infoboxes_filename):
+            logging.info(infoboxes_filename + ' exist!')
+        if isfile(abstracts_filename):
+            logging.info(abstracts_filename + ' exist!')
+        return
+
+    infoboxes_dict = dict()
+    abstracts_dict = dict()
+
     pages_counter = 0
+    input_filename = join(Config.extracted_pages_articles_dir, filename)
     for page in get_wikipedia_pages(filename=input_filename):
         parsed_page = parse_page(page)
         pages_counter += 1
 
         if pages_counter % Config.logging_interval == 0:
-            logging_information_extraction(pages_counter, input_filename, 'infoboxes')
+            logging_information_extraction(pages_counter, input_filename)
             gc.collect()
 
         if parsed_page.ns.text != '0':
             continue
         text = parsed_page.revision.find('text').text
+        page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
         wiki_text = wtp.parse(text)
+
         templates = wiki_text.templates
         for template in templates:
             template_name = clean(str(template.name))
             if any(name in template_name for name in Config.infobox_flags):
-                page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
-                infobox_name = template_name
-                # for name in Config.infobox_flags:
-                #     infobox_name = infobox_name.replace(name, '')
-                infobox_name = infobox_name.strip()
-                if infobox_name:
-                    if page_name not in infoboxes_dict_clean:
-                        infoboxes_dict_clean[page_name] = dict()
-                    if infobox_name not in infoboxes_dict_clean[page_name]:
-                        infoboxes_dict_clean[page_name][infobox_name] = dict()
+                infobox_name = template_name.strip()
+                for name in Config.infobox_flags:
+                    template_name = template_name.replace(name, '')
+                if template_name:
+                    if page_name not in infoboxes_dict:
+                        infoboxes_dict[page_name] = dict()
+                    if infobox_name not in infoboxes_dict[page_name]:
+                        infoboxes_dict[page_name][infobox_name] = dict()
                     for param in template.arguments:
                         param_name = clean(str(param.name))
                         param_value = clean(str(param.value))
                         if param_value:
-                            infoboxes_dict_clean[page_name][infobox_name][param_name] = param_value
+                            infoboxes_dict[page_name][infobox_name][param_name] = param_value
+
+        first_section = wiki_text.sections[0]
+        abstract = first_section.string
+
+        if any(name in abstract for name in Config.redirect_flags):
+            continue
+
+        templates = first_section.templates
+        for template in templates:
+            abstract.replace(template.string, '')
+
+        abstract = clean(abstract, specify_wikilinks=False)
+        if abstract:
+            abstracts_dict[page_name] = abstract.replace('()', '')
 
         del templates
         del wiki_text
 
-    logging_information_extraction(pages_counter, input_filename, 'infoboxes')
-    infoboxes_json_clean = json.dumps(infoboxes_dict_clean, ensure_ascii=False, indent=2, sort_keys=True)
-    infoboxes_file_clean = open(output_filename, 'w+', encoding='utf8')
-    logging_file_operations(output_filename, 'Opened')
-    infoboxes_file_clean.write(infoboxes_json_clean)
-    infoboxes_file_clean.close()
-    logging_file_operations(output_filename, 'Closed')
+    logging_information_extraction(pages_counter, input_filename)
+    infoboxes_json = json.dumps(infoboxes_dict, ensure_ascii=False, indent=2, sort_keys=True)
+    infoboxes_file = open(infoboxes_filename, 'w+', encoding='utf8')
+    logging_file_operations(infoboxes_filename, 'Opened')
+    infoboxes_file.write(infoboxes_json)
+    infoboxes_file.close()
+    logging_file_operations(infoboxes_filename, 'Closed')
 
-
-def extract_ids(input_filename, output_filename):
-    ids_dict = dict()
-    pages_counter = 0
-    for page in get_wikipedia_pages(filename=input_filename):
-        parsed_page = parse_page(page)
-        pages_counter += 1
-        page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
-        page_id = parsed_page.id.text
-        ids_dict[page_id] = page_name
-        if pages_counter % Config.logging_interval == 0:
-            logging_information_extraction(pages_counter, input_filename, 'ids')
-            gc.collect()
-
-    logging_information_extraction(pages_counter, input_filename, 'ids')
-    ids_json = json.dumps(ids_dict, ensure_ascii=False, indent=2, sort_keys=True)
-    ids_file = open(output_filename, 'w+', encoding='utf8')
-    logging_file_operations(output_filename, 'Opened')
-    ids_file.write(ids_json)
-    ids_file.close()
-    logging_file_operations(output_filename, 'Closed')
-
-
-def extract_revision_ids(input_filename, output_filename):
-    revision_ids_dict = dict()
-    pages_counter = 0
-    for page in get_wikipedia_pages(filename=input_filename):
-        parsed_page = parse_page(page)
-        pages_counter += 1
-        page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
-        revision_id = parsed_page.revision.id.text
-        revision_ids_dict[page_name] = revision_id
-        if pages_counter % Config.logging_interval == 0:
-            logging_information_extraction(pages_counter, input_filename, 'revision ids')
-            gc.collect()
-
-    logging_information_extraction(pages_counter, input_filename, 'revision ids')
-    revision_ids_json = json.dumps(revision_ids_dict, ensure_ascii=False, indent=2, sort_keys=True)
-    revision_ids_file = open(output_filename, 'w+', encoding='utf8')
-    logging_file_operations(output_filename, 'Opened')
-    revision_ids_file.write(revision_ids_json)
-    revision_ids_file.close()
-    logging_file_operations(output_filename, 'Closed')
-
-
-def extract_abstracts(input_filename, output_filename):
-    abstracts_dict_clean = dict()
-
-    pages_counter = 0
-    for page in get_wikipedia_pages(filename=input_filename):
-        parsed_page = parse_page(page)
-        pages_counter += 1
-
-        if pages_counter % Config.logging_interval == 0:
-            logging_information_extraction(pages_counter, input_filename, 'abstracts')
-            gc.collect()
-
-        if parsed_page.ns.text != '0':
-            continue
-
-        text = parsed_page.revision.find('text').text
-        wiki_text = wtp.parse(text)
-        first_section = wiki_text.sections[0]
-        abstract = first_section.string
-        if any(name in abstract for name in Config.redirect_flags):
-            continue
-        templates = first_section.templates
-        for template in templates:
-            abstract.replace(template.string, '')
-        abstract = clean(abstract, specify_wikilinks=False)
-        if abstract:
-            page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
-            abstracts_dict_clean[page_name] = abstract.replace('()', '')
-
-        del wiki_text
-        del first_section
-
-    logging_information_extraction(pages_counter, input_filename, 'abstracts')
-    abstracts_json_clean = json.dumps(abstracts_dict_clean, ensure_ascii=False, indent=2, sort_keys=True)
-    abstracts_file_clean = open(output_filename, 'w+', encoding='utf8')
-    logging_file_operations(output_filename, 'Opened')
-    abstracts_file_clean.write(abstracts_json_clean)
-    abstracts_file_clean.close()
-    logging_file_operations(output_filename, 'Closed')
+    logging_information_extraction(pages_counter, input_filename)
+    abstracts_json = json.dumps(abstracts_dict, ensure_ascii=False, indent=2, sort_keys=True)
+    abstracts_file = open(abstracts_filename, 'w+', encoding='utf8')
+    logging_file_operations(abstracts_filename, 'Opened')
+    abstracts_file.write(abstracts_json)
+    abstracts_file.close()
+    logging_file_operations(abstracts_filename, 'Closed')

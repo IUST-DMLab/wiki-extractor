@@ -1,9 +1,11 @@
-import json
 import codecs
-import Config
-import pymysql
-from os.path import join
+import json
 from collections import defaultdict
+from os.path import join
+
+import pymysql
+
+import Config
 from Utils import logging_file_operations, logging_database
 
 

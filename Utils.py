@@ -16,8 +16,8 @@ def logging_pages_extraction(pages_number, filename):
     logging.info('%d Pages Extracted from %s!' % (pages_number, filename))
 
 
-def logging_information_extraction(pages_number, filename, info):
-    logging.info('%d Pages Checked from %s for %s!' % (pages_number, filename, info))
+def logging_information_extraction(pages_number, filename):
+    logging.info('%d Pages Checked from %s!' % (pages_number, filename))
 
 
 def logging_database(msg):
