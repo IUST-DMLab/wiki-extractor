@@ -8,19 +8,6 @@ import Config
 import Utils
 
 
-def extract_wikipedia_page():
-    Utils.create_directory(Config.extracted_pages_articles_dir)
-    Utils.create_directory(Config.extracted_pages_meta_current_dir)
-    extracted_pages_articles_files = os.listdir(Config.extracted_pages_articles_dir)
-    extracted_pages_meta_current_files = os.listdir(Config.extracted_pages_meta_current_dir)
-    if not extracted_pages_articles_files:
-        BZ2_dums_extractor.extract_wikipedia_pages(Config.fawiki_latest_pages_articles_dump,
-                                                   Config.extracted_pages_articles_dir)
-    if not extracted_pages_meta_current_files:
-        BZ2_dums_extractor.extract_wikipedia_pages(Config.fawiki_latest_pages_meta_current_dump,
-                                                   Config.extracted_pages_meta_current_dir)
-
-
 def extract_infoboxes():
     extracted_pages_files = os.listdir(Config.extracted_pages_articles_dir)
     Utils.create_directory(Config.extracted_infoboxes_dir)
