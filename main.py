@@ -6,6 +6,7 @@ def main():
     Extractors.extract_infoboxes()
     Extractors.extract_abstracts()
     Extractors.extract_ids()
+    Extractors.extract_revision_ids()
 
 
 if __name__ == '__main__':

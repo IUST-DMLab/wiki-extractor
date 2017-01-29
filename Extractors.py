@@ -51,3 +51,14 @@ def extract_ids():
                             (join(Config.extracted_pages_meta_current_dir, file_name),
                              Utils.get_information_filename(Config.extracted_ids_dir, file_name))
                             for file_name in extracted_pages_files)
+
+
+def extract_revision_ids():
+    extracted_pages_files = os.listdir(Config.extracted_pages_articles_dir)
+    Utils.create_directory(Config.extracted_revision_ids_dir)
+    extracted_revision_ids_files = os.listdir(Config.extracted_revision_ids_dir)
+    if extracted_pages_files and not extracted_revision_ids_files:
+        Parallel(n_jobs=-1)(delayed(Utils.extract_revision_ids)
+                            (join(Config.extracted_pages_articles_dir, file_name),
+                             Utils.get_information_filename(Config.extracted_revision_ids_dir, file_name))
+                            for file_name in extracted_pages_files)

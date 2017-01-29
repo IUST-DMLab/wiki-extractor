@@ -112,7 +112,7 @@ def extract_infoboxes(input_filename, output_filename):
         templates = wiki_text.templates
         for template in templates:
             template_name = clean(str(template.name))
-            if any(name in template_name for name in Config.infobox_flags) or 'box' in template_name:
+            if any(name in template_name for name in Config.infobox_flags):
                 page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
                 infobox_name = template_name
                 # for name in Config.infobox_flags:
@@ -170,6 +170,28 @@ def extract_ids(input_filename, output_filename):
     logging_file_operations(output_filename, 'Closed')
 
 
+def extract_revision_ids(input_filename, output_filename):
+    revision_ids_dict = dict()
+    pages_counter = 0
+    for page in get_wikipedia_pages(filename=input_filename):
+        parsed_page = parse_page(page)
+        pages_counter += 1
+        page_name = 'kbr:' + parsed_page.title.text.replace(' ', '_')
+        revision_id = parsed_page.revision.id.text
+        revision_ids_dict[page_name] = revision_id
+        if pages_counter % Config.logging_interval == 0:
+            logging_information_extraction(pages_counter, input_filename, 'revision ids')
+            gc.collect()
+
+    logging_information_extraction(pages_counter, input_filename, 'revision ids')
+    revision_ids_json = json.dumps(revision_ids_dict, ensure_ascii=False, indent=2, sort_keys=True)
+    revision_ids_file = open(output_filename, 'w+', encoding='utf8')
+    logging_file_operations(output_filename, 'Opened')
+    revision_ids_file.write(revision_ids_json)
+    revision_ids_file.close()
+    logging_file_operations(output_filename, 'Closed')
+
+
 def extract_abstracts(input_filename, output_filename):
     abstracts_dict_clean = dict()
     abstracts_dict_unclean = dict()
@@ -190,12 +212,12 @@ def extract_abstracts(input_filename, output_filename):
         wiki_text = wtp.parse(text)
         first_section = wiki_text.sections[0]
         abstract = first_section.string
-        if 'تغییر_مسیر' in abstract or 'تغییرمسیر' in abstract or 'REDIRECT' in abstract:
+        if any(name in abstract for name in Config.redirect_flags):
             continue
         templates = first_section.templates
         for template in templates:
             template_name = clean(str(template.name))
-            if 'Infobox' in template_name or 'جعبه اطلاعات' in template_name or 'جعبه' in template_name:
+            if any(name in template_name for name in Config.infobox_flags):
                 abstract.replace(template.string, '')
         abstract = clean(abstract, specify_wikilinks=False)
         if abstract:
