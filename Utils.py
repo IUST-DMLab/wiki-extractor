@@ -24,6 +24,10 @@ def logging_database(msg):
     logging.exception('%s Error!' % msg)
 
 
+def loggin_id_mapping_error(page_id, func_name):
+    logging.info('Id %d mapping NOT FOUND, in %s function!' % (page_id, func_name))
+
+
 def get_information_filename(info_dir, file_number):
     return join(info_dir, str(file_number)+'.json')
 
