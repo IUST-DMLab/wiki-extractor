@@ -18,6 +18,7 @@ extracted_ids_dir = join(extracted_dir, 'ids')
 extracted_revision_ids_dir = join(extracted_dir, 'revision_ids')
 extracted_infoboxes_dir = join(extracted_dir, 'infoboxes')
 extracted_abstracts_dir = join(extracted_dir, 'abstracts')
+extracted_disambiguation_dir = join(extracted_dir, 'disambiguation')
 
 json_result_dir = join(resources_dir, 'json-result')
 
