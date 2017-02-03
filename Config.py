@@ -9,6 +9,9 @@ wikipedia_dumps_dir = join(resources_dir, 'dumps')
 extracted_dir = join(resources_dir, 'extracted')
 extracted_pages_articles_dir = join(extracted_dir, 'pages-articles')
 extracted_pages_meta_current_dir = join(extracted_dir, 'pages-meta-current')
+extracted_pages_with_infobox_dir = join(extracted_dir, 'with_infobox')
+extracted_pages_without_infobox_dir = join(extracted_dir, 'without_infobox')
+extracted_pages_path_dir = join(extracted_dir, 'pages_path')
 extracted_ids_dir = join(extracted_dir, 'ids')
 extracted_revision_ids_dir = join(extracted_dir, 'revision_ids')
 extracted_infoboxes_dir = join(extracted_dir, 'infoboxes')
@@ -27,9 +30,9 @@ fawiki_latest_page_dump = join(wikipedia_dumps_dir, 'fawiki-latest-page.sql.gz')
 fawiki_latest_page_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pagelinks.sql.gz')
 fawiki_latest_redirect_dump = join(wikipedia_dumps_dir, 'fawiki-latest-redirect.sql.gz')
 
-infobox_flags = ['Infobox', 'infobox', 'Taxobox', 'taxobox', 'Drugbox', 'drugbox', 'Geobox', 'geobox',
-                 'Ionbox', 'ionbox', 'Planetbox', 'Planetbox', 'Chembox', 'chembox', 'Starbox', 'starbox',
-                 'Drugclassbox', 'drugclassbox', 'Reactionbox', 'reactionbox', 'Speciesbox', 'speciesbox',
-                 'Comiccharacterbox', 'comiccharacterbox', 'جعبه اطلاعات', 'جعبه']
+infobox_flags_en = ['infobox', 'taxobox', 'drugbox', 'geobox', 'ionbox', 'planetbox', 'chembox',
+                    'starbox', 'drugclassbox', 'reactionbox', 'speciesbox', 'comiccharacterbox']
+
+infobox_flags_fa = ['جعبه اطلاعات', 'جعبه']
 
 redirect_flags = ['#تغییر_مسیر', '#تغییرمسیر', '#REDIRECT', '#redirect']

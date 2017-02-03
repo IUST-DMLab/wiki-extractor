@@ -5,6 +5,8 @@ from os.path import join, exists
 
 from bs4 import BeautifulSoup
 
+import Config
+
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s ', level=logging.DEBUG)
 
 
@@ -32,9 +34,27 @@ def get_information_filename(info_dir, file_number):
     return join(info_dir, str(file_number)+'.json')
 
 
-def create_directory(directory):
+def find_get_infobox_name_type(template_name):
+    template_name = template_name.lower().replace('_', ' ')
+    for name in Config.infobox_flags_en:
+        if name in template_name:
+            infobox_name = name
+            infobox_type = template_name.replace(name, '').strip()
+            return infobox_name, infobox_type
+
+    for name in Config.infobox_flags_fa:
+        if name in template_name:
+            infobox_name = name
+            infobox_type = template_name.replace(name, '').strip()
+            return infobox_name, infobox_type
+
+    return None, None
+
+
+def create_directory(directory, show_logging=False):
     if not exists(directory):
-        logging.info(' Create All Directories in Path %s' % directory)
+        if show_logging:
+            logging.info(' Create All Directories in Path %s' % directory)
         os.makedirs(directory)
 
 
