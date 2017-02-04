@@ -39,12 +39,15 @@ def get_id_mapping(page_sql_file):
     all_records = get_dump_rows(page_sql_file)
 
     pages = {}
+    revisions = defaultdict(list)
     for record in all_records:
         reader = csv.reader([record], delimiter=',', doublequote=False, escapechar='\\', quotechar="'", strict=True)
         for columns in reader:
-            page_id, page_namespace, page_title = int(columns[0]), columns[1], columns[2]
+            page_id, page_namespace, page_title, revision = int(columns[0]), columns[1], columns[2], columns[10]
             pages[page_id] = page_title
+            revisions[page_title].append(revision)
     dict_to_json(pages, 'id_title_map.json')
+    dict_to_json(revisions, 'revision_id.json')
     return pages
 
 
