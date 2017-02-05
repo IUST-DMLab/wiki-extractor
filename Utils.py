@@ -5,6 +5,7 @@ from os.path import join, exists
 
 from bs4 import BeautifulSoup
 
+from ThirdParty.WikiCleaner import clean
 import Config
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s ', level=logging.DEBUG)
@@ -35,7 +36,7 @@ def get_information_filename(info_dir, file_number):
 
 
 def find_get_infobox_name_type(template_name):
-    template_name = template_name.lower().replace('_', ' ')
+    template_name = clean(str(template_name).lower().replace('_', ' '))
     for name in Config.infobox_flags_en:
         if name in template_name:
             infobox_name = name

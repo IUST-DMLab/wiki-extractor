@@ -36,3 +36,5 @@ infobox_flags_en = ['infobox', 'taxobox', 'drugbox', 'geobox', 'ionbox', 'planet
 infobox_flags_fa = ['جعبه اطلاعات', 'جعبه']
 
 redirect_flags = ['#تغییر_مسیر', '#تغییرمسیر', '#REDIRECT', '#redirect']
+
+disambigution_flags = ['رفع‌ابهام‌', 'رفع ابهام', 'ابهام‌زدایی', 'ابهام زدایی']
