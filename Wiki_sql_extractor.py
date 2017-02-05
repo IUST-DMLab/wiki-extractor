@@ -4,7 +4,7 @@ import gzip
 import Config
 from os.path import join
 from collections import defaultdict
-from Utils import logging_file_operations, loggin_id_mapping_error
+from Utils import logging_file_operations, loggin_id_mapping_error, create_directory
 
 
 def dict_to_json(res, f_name):
@@ -167,6 +167,7 @@ def get_wiki_link(id_map):
 
 
 def main():
+    create_directory(Config.json_result_dir)
     id_map = get_id_mapping(Config.fawiki_latest_page_dump)
     get_lang_links(id_map)
     get_redirect(id_map)
