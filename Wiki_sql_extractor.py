@@ -11,21 +11,19 @@ def dict_to_json(res, f_name):
     filename = join(Config.json_result_dir, f_name,)
     with open(filename, 'w') as fp:
         logging_file_operations(filename, 'Opened')
-        json.dump(res, fp, ensure_ascii=False)
+        json.dump(res, fp, ensure_ascii=False, indent=2)
     logging_file_operations(filename, 'Closed')
 
 
 def get_dump_rows(file_name, encoding='utf-8'):
-    all_records = []
-
     with gzip.open(file_name, 'rt', encoding=encoding) as f:
         logging_file_operations(file_name, 'Opened')
-        for line in f.readlines():
-
+        for line in f:
             if line.startswith('INSERT INTO '):
-                all_records += find_records(line)
+                all_records = find_records(line)
+                for record in all_records:
+                    yield record
     logging_file_operations(file_name, 'Closed')
-    return all_records
 
 
 def find_records(line):
