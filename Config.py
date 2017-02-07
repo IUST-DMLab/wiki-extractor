@@ -31,10 +31,16 @@ fawiki_latest_page_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pagelin
 fawiki_latest_redirect_dump = join(wikipedia_dumps_dir, 'fawiki-latest-redirect.sql.gz')
 
 infobox_flags_en = ['infobox', 'taxobox', 'drugbox', 'geobox', 'ionbox', 'planetbox', 'chembox',
-                    'starbox', 'drugclassbox', 'reactionbox', 'speciesbox', 'comiccharacterbox']
+                    'starbox', 'drugclassbox', 'speciesbox', 'comiccharacterbox']
 
 infobox_flags_fa = ['جعبه اطلاعات', 'جعبه']
 
 redirect_flags = ['#تغییر_مسیر', '#تغییرمسیر', '#REDIRECT', '#redirect']
 
 disambigution_flags = ['رفع‌ابهام‌', 'رفع ابهام', 'ابهام‌زدایی', 'ابهام زدایی']
+
+information_flags = {'infoboxes_flag': 'infoboxes',
+                     'abstracts_flag': 'abstracts',
+                     'revision_id_flag': 'revision_id',
+                     'wiki_text_flag': 'wiki_text'
+                     }

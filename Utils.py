@@ -1,12 +1,13 @@
 import bz2
+import json
 import logging
 import os
 from os.path import join, exists
 
 from bs4 import BeautifulSoup
 
-from ThirdParty.WikiCleaner import clean
 import Config
+from ThirdParty.WikiCleaner import clean
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s ', level=logging.DEBUG)
 
@@ -41,15 +42,26 @@ def find_get_infobox_name_type(template_name):
         if name in template_name:
             infobox_name = name
             infobox_type = template_name.replace(name, '').strip()
+            if not infobox_type:
+                infobox_type = 'NULL'
             return infobox_name, infobox_type
 
     for name in Config.infobox_flags_fa:
         if name in template_name:
             infobox_name = name
             infobox_type = template_name.replace(name, '').strip()
+            if not infobox_type:
+                infobox_type = 'NULL'
             return infobox_name, infobox_type
 
     return None, None
+
+
+def save_dict_to_json_file(filename, dict_to_save):
+    json_file = open(filename, 'w+', encoding='utf8')
+    json_dumps = json.dumps(dict_to_save, ensure_ascii=False, indent=2, sort_keys=True)
+    json_file.write(json_dumps)
+    json_file.close()
 
 
 def create_directory(directory, show_logging=False):
