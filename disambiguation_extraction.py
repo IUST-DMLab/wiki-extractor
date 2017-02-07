@@ -10,6 +10,7 @@ import operator
 
 
 def get_disambiguation_links(content):
+
     sentences = content.splitlines()
 
     sub_str = []
@@ -38,12 +39,13 @@ def extract_disambiguation(filename):
         parse_wiki_text = wtp.parse(str(parsed_page))
 
         json_dict = {}
+        disambiguation_name = ['ابهام‌زدایی', 'ابهام زدایی']
+        for names in disambiguation_name:
+            if any(names in s.name for s in parse_wiki_text.templates):
 
-        if any('ابهام‌زدایی' in s.name for s in parse_wiki_text.templates):
-
-            json_dict['title'] = parsed_page.title.text
-            json_dict['field'] = get_disambiguation_links(str(parsed_page.contents))
-            json_list.append(json_dict)
+                json_dict['title'] = parsed_page.title.text
+                json_dict['field'] = get_disambiguation_links(str(parsed_page.contents))
+                json_list.append(json_dict)
 
     disambiguation_file = open(disambiguation_filename, 'w+', encoding='utf8')
     disambiguation_file.write(json.dumps(json_list, ensure_ascii=False, indent=2, sort_keys=True))
