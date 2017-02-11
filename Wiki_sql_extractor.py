@@ -1,177 +1,124 @@
-import csv
-import json
-import gzip
-import Config
-from os.path import join
 from collections import defaultdict
-from Utils import logging_file_operations, loggin_id_mapping_error, create_directory
 
-
-def dict_to_json(res, f_name):
-    filename = join(Config.json_result_dir, f_name,)
-    with open(filename, 'w') as fp:
-        logging_file_operations(filename, 'Opened')
-        json.dump(res, fp, ensure_ascii=False, indent=2)
-    logging_file_operations(filename, 'Closed')
-
-
-def get_dump_rows(file_name, encoding='utf-8'):
-    with gzip.open(file_name, 'rt', encoding=encoding) as f:
-        logging_file_operations(file_name, 'Opened')
-        for line in f:
-            if line.startswith('INSERT INTO '):
-                all_records = find_records(line)
-                for record in all_records:
-                    yield record
-    logging_file_operations(file_name, 'Closed')
-
-
-def find_records(line):
-    records_str = line.partition('` VALUES ')[2]
-    records_str = records_str.strip()[1:-2]
-    records = records_str.split('),(')
-    return records
+import Config
+import Utils
 
 
 def get_id_mapping(page_sql_file):
-    all_records = get_dump_rows(page_sql_file)
+    all_records = Utils.get_sql_rows(page_sql_file)
 
-    pages = {}
-    revisions = defaultdict(list)
+    page_ids = dict()
     for record in all_records:
-        reader = csv.reader([record], delimiter=',', doublequote=False, escapechar='\\', quotechar="'", strict=True)
-        for columns in reader:
-            page_id, page_namespace, page_title, revision = int(columns[0]), columns[1], columns[2], columns[10]
-            pages[page_id] = page_title
-            revisions[page_title].append(revision)
-    dict_to_json(pages, 'id_title_map.json')
-    dict_to_json(revisions, 'revision_id.json')
-    return pages
+        for columns in record:
+            page_id, page_namespace, page_title = columns[0], columns[1], columns[2]
+            page_ids[page_id] = page_title
+
+    Utils.create_directory(Config.extracted_page_ids_dir)
+    filename = Utils.get_information_filename(Config.extracted_jsons, 'page_ids')
+    Utils.save_dict_to_json_file(filename, page_ids)
+    return page_ids
 
 
 def get_lang_links(id_map):
-    id_not_found = 1
-    all_records = get_dump_rows(Config.fawiki_latest_lang_links_dump)
+    lang_links_en = dict()
+    lang_links_ar = dict()
 
-    page_id_titles_en = defaultdict(list)
-    page_id_titles_ar = defaultdict(list)
+    all_records = Utils.get_sql_rows(Config.fawiki_latest_lang_links_dump)
     for record in all_records:
-        reader = csv.reader([record], delimiter=',', doublequote=False, escapechar='\\', quotechar="'", strict=True)
-        for columns in reader:
-            try:
-                ll_from, ll_lang, ll_title = id_map[int(columns[0])], columns[1], columns[2]
-            except KeyError:
-                loggin_id_mapping_error(int(columns[0]), get_lang_links.__name__)
-                ll_from, ll_lang, ll_title = int(columns[0]), columns[1], columns[2]
-                id_not_found += 1
+        for columns in record:
+            ll_from, ll_lang, ll_title = columns[0], columns[1], columns[2]
+            if ll_from in id_map:
+                ll_from = id_map[ll_from]
 
-            if ll_lang == 'en':
-                page_id_titles_en[ll_from].append(ll_title)
-            elif ll_lang == 'ar':
-                page_id_titles_ar[ll_from].append(ll_title)
+                if ll_lang == 'en':
+                    lang_links_en[ll_from] = ll_title
+                elif ll_lang == 'ar':
+                    lang_links_ar[ll_from] = ll_title
 
-    dict_to_json(page_id_titles_ar, 'ar_lang_link.json')
-    dict_to_json(page_id_titles_en, 'en_lang_link.json')
-    print("id not found ----->> %d" % id_not_found)
-    return page_id_titles_en, page_id_titles_ar
+    Utils.create_directory(Config.extracted_jsons)
+    en_filename = Utils.get_information_filename(Config.extracted_jsons, 'en_lang_links')
+    ar_filename = Utils.get_information_filename(Config.extracted_jsons, 'ar_lang_links')
+    Utils.save_dict_to_json_file(en_filename, lang_links_en)
+    Utils.save_dict_to_json_file(ar_filename, lang_links_ar)
 
 
 def get_redirect(id_map):
-    id_not_found = 0
-    all_records = get_dump_rows(Config.fawiki_latest_redirect_dump)
+    redirects = dict()
+    reverse_redirects = dict()
 
-    redirects = defaultdict(list)
-
+    all_records = Utils.get_sql_rows(Config.fawiki_latest_redirect_dump)
     for record in all_records:
-        reader = csv.reader([record], delimiter=',', doublequote=False, escapechar='\\', quotechar="'", strict=True)
-        for columns in reader:
-            try:
-                r_from, r_title = id_map[int(columns[0])], columns[2]
-            except KeyError:
-                loggin_id_mapping_error(int(columns[0]), get_redirect.__name__)
-                r_from, r_title = int(columns[0]), columns[2]
-                id_not_found += 1
+        for columns in record:
+            r_from, ns, r_title = columns[0], columns[1], columns[2]
+            if r_from in id_map:
+                r_from = id_map[r_from]
 
-            redirects[r_from].append(r_title)
-    dict_to_json(redirects, 'redirect.json')
-    print("id not found ----->> %d" % id_not_found)
-    return redirects
+                if ns not in redirects:
+                    redirects[ns] = dict()
+                if ns not in reverse_redirects:
+                    reverse_redirects[ns] = dict()
+                if r_title not in reverse_redirects[ns]:
+                    reverse_redirects[ns][r_title] = list()
+                redirects[ns][r_from] = r_title
+                reverse_redirects[ns][r_title].append(r_from)
+
+    Utils.create_directory(Config.extracted_redirects_dir)
+    Utils.create_directory(Config.extracted_reverse_redirects_dir)
+
+    for ns in redirects:
+        filename = Utils.get_information_filename(Config.extracted_redirects_dir, ns+'-redirects')
+        Utils.save_dict_to_json_file(filename, redirects[ns])
+    for ns in reverse_redirects:
+        filename = Utils.get_information_filename(Config.extracted_reverse_redirects_dir, ns+'-redirects')
+        Utils.save_dict_to_json_file(filename, reverse_redirects[ns])
 
 
 def get_category_link(id_map):
-    id_not_found = 0
-    all_records = get_dump_rows(Config.fawiki_latest_category_links_dump, encoding='ISO-8859-1')
-
     category_links = defaultdict(list)
 
+    all_records = Utils.get_sql_rows(Config.fawiki_latest_category_links_dump)
     for record in all_records:
-        reader = csv.reader([record], delimiter=',', doublequote=False, escapechar='\\', quotechar="'", strict=True)
-        for columns in reader:
-            try:
-                cl_from, cl_to = id_map[int(columns[0])], columns[1]
-            except KeyError:
-                loggin_id_mapping_error(int(columns[0]), get_category_link.__name__)
-                cl_from, cl_to = int(columns[0]), columns[1]
-                id_not_found += 1
+        for columns in record:
+            cl_from, cl_to = columns[0], columns[1]
+            if cl_from in id_map:
+                cl_from = id_map[cl_from]
+                category_links[cl_from].append(cl_to)
 
-            category_links[cl_from].append(cl_to)
-    dict_to_json(category_links, 'category.json')
-    print("id not found ----->> %d" % id_not_found)
     return category_links
 
 
 def get_external_link(id_map):
-    id_not_found = 0
-    all_records = get_dump_rows(Config.fawiki_latest_external_links_dump)
-
     external_links = defaultdict(list)
 
+    all_records = Utils.get_sql_rows(Config.fawiki_latest_external_links_dump)
     for record in all_records:
-        reader = csv.reader([record], delimiter=',', doublequote=False, escapechar='\\', quotechar="'", strict=True)
-        for columns in reader:
-            try:
-                el_from, el_to = id_map[int(columns[1])], columns[3]
-            except KeyError:
-                loggin_id_mapping_error(int(columns[0]), get_external_link.__name__)
-                el_from, el_to = int(columns[1]), columns[3]
-                id_not_found += 1
+        for columns in record:
+            el_from, el_to = columns[1], columns[3]
+            if el_from in id_map:
+                el_from = id_map[el_from]
+                external_links[el_from].append(el_to)
 
-            external_links[el_from].append(el_to)
-    dict_to_json(external_links, 'external_links.json')
-    print("id not found ----->> %d" % id_not_found)
     return external_links
 
 
 def get_wiki_link(id_map):
-    id_not_found = 0
-    all_records = get_dump_rows(Config.fawiki_latest_page_links_dump, encoding='ISO-8859-1')
-
     wiki_links = defaultdict(list)
 
+    all_records = Utils.get_sql_rows(Config.fawiki_latest_page_links_dump)
     for record in all_records:
-        reader = csv.reader([record], delimiter=',', doublequote=False, escapechar='\\', quotechar="'", strict=True)
-        for columns in reader:
-            try:
-                pl_from, pl_title = id_map[int(columns[0])], columns[2]
-            except KeyError:
-                loggin_id_mapping_error(int(columns[0]), get_wiki_link.__name__)
-                pl_from, pl_title = int(columns[0]), columns[2]
-                id_not_found += 1
+        for columns in record:
+            pl_from, pl_title = columns[0], columns[2]
+            if pl_from in id_map:
+                pl_from = id_map[pl_from]
+                wiki_links[pl_from].append(pl_title)
 
-            wiki_links[pl_from].append(pl_title)
-    dict_to_json(wiki_links, 'wiki_links.json')
-    print("id not found ----->> %d" % id_not_found)
     return wiki_links
 
 
 def main():
-    create_directory(Config.json_result_dir)
     id_map = get_id_mapping(Config.fawiki_latest_page_dump)
     get_lang_links(id_map)
     get_redirect(id_map)
-    get_category_link(id_map)
-    get_external_link(id_map)
-    get_wiki_link(id_map)
 
 
 if __name__ == '__main__':

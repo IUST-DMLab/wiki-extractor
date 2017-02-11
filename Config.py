@@ -11,11 +11,13 @@ extracted_pages_articles_dir = join(extracted_dir, 'pages-articles')
 extracted_pages_meta_current_dir = join(extracted_dir, 'pages-meta-current')
 extracted_pages_with_infobox_dir = join(extracted_dir, 'with_infobox')
 extracted_pages_without_infobox_dir = join(extracted_dir, 'without_infobox')
-extracted_pages_path_dir = join(extracted_dir, 'pages_path')
-extracted_ids_dir = join(extracted_dir, 'ids')
-extracted_revision_ids_dir = join(extracted_dir, 'revision_ids')
+extracted_pages_path_with_infobox_dir = join(extracted_dir, 'pages_path', 'with_infobox')
+extracted_pages_path_without_infobox_dir = join(extracted_dir, 'pages_path', 'without_infobox')
 extracted_infoboxes_dir = join(extracted_dir, 'infoboxes')
-extracted_abstracts_dir = join(extracted_dir, 'abstracts')
+extracted_page_ids_dir = join(extracted_dir, 'page_ids')
+extracted_jsons = join(extracted_dir, 'jsons')
+extracted_redirects_dir = join(extracted_jsons, 'redirects')
+extracted_reverse_redirects_dir = join(extracted_jsons, 'reverse_redirects')
 extracted_disambiguation_dir = join(extracted_dir, 'disambiguation')
 
 json_result_dir = join(resources_dir, 'json-result')
@@ -38,9 +40,3 @@ infobox_flags_fa = ['جعبه اطلاعات', 'جعبه']
 redirect_flags = ['#تغییر_مسیر', '#تغییرمسیر', '#REDIRECT', '#redirect']
 
 disambigution_flags = ['رفع‌ابهام‌', 'رفع ابهام', 'ابهام‌زدایی', 'ابهام زدایی']
-
-information_flags = {'infoboxes_flag': 'infoboxes',
-                     'abstracts_flag': 'abstracts',
-                     'revision_id_flag': 'revision_id',
-                     'wiki_text_flag': 'wiki_text'
-                     }

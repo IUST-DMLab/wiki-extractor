@@ -196,7 +196,7 @@ def replaceInternalLinks(text, specify_wikilinks):
                 curp = e1
             label = inner[pipe + 1:].strip()
         if specify_wikilinks:
-            res += text[cur:s] + ' kbr:' + title.replace(' ', '_') + ' ' + trail
+            res += text[cur:s] + ' fa.wikipedia.org/wiki/' + title.replace(' ', '_') + ' ' + trail
         else:
             res += text[cur:s] + makeInternalLink(title, label) + trail
         cur = end

@@ -1,4 +1,5 @@
 import gc
+import json
 import logging
 import os
 import re
@@ -42,19 +43,15 @@ def extract_wikipedia_bz2_dump(input_filename, output_dir):
         logging.info('Page Extraction Finished! Number of All Extracted Pages: %d' % pages_counter)
 
 
-def extract_infoboxes_abstracts(filename):
-    pages_path_dict = dict()
-    with_infoboxes_dict = dict()
-    without_infoboxes_dict = dict()
+def extract_bz2_dump(filename):
+    infoboxes = dict()
+    page_ids = dict()
+    revision_ids = dict()
+    wiki_texts = dict()
+    abstracts = dict()
 
-    infoboxes_flag = Config.information_flags['infoboxes_flag']
-    abstracts_flag = Config.information_flags['abstracts_flag']
-    revision_id_flag = Config.information_flags['revision_id_flag']
-    wiki_text_flag = Config.information_flags['wiki_text_flag']
-
-    without_infoboxes_dict[abstracts_flag] = dict()
-    without_infoboxes_dict[revision_id_flag] = dict()
-    without_infoboxes_dict[wiki_text_flag] = dict()
+    with_infobox_page_path = dict()
+    without_infobox_list = list()
 
     pages_counter = 0
     input_filename = join(Config.extracted_pages_articles_dir, filename)
@@ -69,51 +66,21 @@ def extract_infoboxes_abstracts(filename):
         if parsed_page.ns.text != '0':
             continue
 
-        text = parsed_page.revision.find('text').text
         page_name = parsed_page.title.text
+        page_id = parsed_page.id.text
         revision_id = parsed_page.revision.id.text
-        pages_path_dict[page_name] = list()
+        text = parsed_page.revision.find('text').text
+
+        page_ids[page_id] = page_name
+        revision_ids[page_name] = revision_id
+        wiki_texts[page_name] = text
+
         wiki_text = wtp.parse(text)
-
-        has_infobox = False
-        templates = wiki_text.templates
-        for template in templates:
-            infobox_name, infobox_type = Utils.find_get_infobox_name_type(template.name)
-            if infobox_name and infobox_type:
-                has_infobox = True
-                if infobox_name not in with_infoboxes_dict:
-                    with_infoboxes_dict[infobox_name] = dict()
-
-                if infobox_type not in with_infoboxes_dict[infobox_name]:
-                    with_infoboxes_dict[infobox_name][infobox_type] = dict()
-
-                for flag in Config.information_flags:
-                    information_flag = Config.information_flags[flag]
-                    if information_flag not in with_infoboxes_dict[infobox_name][infobox_type]:
-                        with_infoboxes_dict[infobox_name][infobox_type][information_flag] = dict()
-
-                if page_name not in with_infoboxes_dict[infobox_name][infobox_type][infoboxes_flag]:
-                    with_infoboxes_dict[infobox_name][infobox_type][infoboxes_flag][page_name] = list()
-
-                infobox_dict = dict()
-                for param in template.arguments:
-                    param_name = clean(str(param.name))
-                    param_value = clean(str(param.value))
-                    if param_value:
-                        param_value = re.split(r'\\\\|/|,|،', param_value)
-                        param_value = [value.strip() for value in param_value]
-                        infobox_dict[param_name] = param_value
-
-                with_infoboxes_dict[infobox_name][infobox_type][infoboxes_flag][page_name].append(infobox_dict)
-
-                if len(with_infoboxes_dict[infobox_name][infobox_type][infoboxes_flag][page_name]) == 1:
-                    pages_path_dict[page_name].append([infobox_name, infobox_type])
 
         first_section = wiki_text.sections[0]
         abstract = first_section.string
 
         if not any(name in abstract for name in Config.redirect_flags)\
-                and not any(name in abstract for name in Config.disambigution_flags)\
                 and not any(name in page_name for name in Config.disambigution_flags):
             first_section_templates = first_section.templates
             for template in first_section_templates:
@@ -122,41 +89,118 @@ def extract_infoboxes_abstracts(filename):
                     abstract = abstract.replace(template.string, '')
 
             abstract = clean(abstract, specify_wikilinks=False).replace('()', '')
-            if has_infobox:
-                for path in pages_path_dict[page_name]:
-                    infobox_name = path[0]
-                    infobox_type = path[1]
-                    with_infoboxes_dict[infobox_name][infobox_type][abstracts_flag][page_name] = abstract
-                    with_infoboxes_dict[infobox_name][infobox_type][revision_id_flag][page_name] = revision_id
-                    with_infoboxes_dict[infobox_name][infobox_type][wiki_text_flag][page_name] = text
+
+            abstracts[page_name] = abstract
+
+        templates = wiki_text.templates
+        for template in templates:
+            infobox_name, infobox_type = Utils.find_get_infobox_name_type(template.name)
+            if infobox_name and infobox_type:
+                if infobox_name not in infoboxes:
+                    infoboxes[infobox_name] = dict()
+
+                if infobox_type not in infoboxes[infobox_name]:
+                    infoboxes[infobox_name][infobox_type] = dict()
+
+                if page_name not in infoboxes[infobox_name][infobox_type]:
+                    infoboxes[infobox_name][infobox_type][page_name] = list()
+
+                infobox = dict()
+                for param in template.arguments:
+                    param_name = clean(str(param.name))
+                    param_value = clean(str(param.value))
+                    if param_value:
+                        param_value = re.split(r'\\\\|,|،', param_value)
+                        param_value = [value.strip() for value in param_value]
+                        infobox[param_name] = param_value
+
+                infoboxes[infobox_name][infobox_type][page_name].append(infobox)
+
             else:
-                without_infoboxes_dict[abstracts_flag][page_name] = abstract
-                without_infoboxes_dict[revision_id_flag][page_name] = revision_id
-                without_infoboxes_dict[wiki_text_flag][page_name] = text
+                without_infobox_list.append(page_name)
 
         del templates
         del wiki_text
 
-    for infobox_name in with_infoboxes_dict:
-        for infobox_type in with_infoboxes_dict[infobox_name]:
+    for infobox_name in infoboxes:
+        for infobox_type in infoboxes[infobox_name]:
             absolute_resource_path = join(Config.extracted_pages_with_infobox_dir, infobox_name, infobox_type)
             if len(absolute_resource_path) < 255:
                 Utils.create_directory(absolute_resource_path)
 
-                for flag in Config.information_flags:
-                    information_flag = Config.information_flags[flag]
-                    information_filename = Utils.get_information_filename(absolute_resource_path,
-                                                                          filename+'-'+information_flag)
-                    Utils.save_dict_to_json_file(information_filename,
-                                                 with_infoboxes_dict[infobox_name][infobox_type][information_flag])
+                with_infobox_page_path.update(dict((key, [infobox_name, infobox_type, filename])
+                                                   for key in infoboxes[infobox_name][infobox_type]))
+
+                infoboxes_filename = Utils.get_information_filename(absolute_resource_path, filename+'-infoboxes')
+                Utils.save_dict_to_json_file(infoboxes_filename, infoboxes[infobox_name][infobox_type])
+
+                revision_ids_filename = Utils.get_information_filename(absolute_resource_path, filename+'-revision_ids')
+                filtered_revision_ids = dict((key, value) for key, value in revision_ids.items()
+                                             if key in infoboxes[infobox_name][infobox_type])
+                Utils.save_dict_to_json_file(revision_ids_filename, filtered_revision_ids)
+
+                wiki_texts_filename = Utils.get_information_filename(absolute_resource_path, filename+'-wiki_texts')
+                filtered_wiki_texts = dict((key, value) for key, value in wiki_texts.items()
+                                           if key in infoboxes[infobox_name][infobox_type])
+                Utils.save_dict_to_json_file(wiki_texts_filename, filtered_wiki_texts)
+
+                abstracts_filename = Utils.get_information_filename(absolute_resource_path, filename+'-abstracts')
+                filtered_abstracts = dict((key, value) for key, value in abstracts.items()
+                                          if key in infoboxes[infobox_name][infobox_type])
+                Utils.save_dict_to_json_file(abstracts_filename, filtered_abstracts)
+
+    Utils.create_directory(Config.extracted_pages_path_with_infobox_dir)
+    with_infobox_page_path_filename = Utils.get_information_filename(Config.extracted_pages_path_with_infobox_dir,
+                                                                     filename)
+    Utils.save_dict_to_json_file(with_infobox_page_path_filename, with_infobox_page_path)
+
+    without_infobox_page_path = dict((key, [filename]) for key in without_infobox_list)
+    Utils.create_directory(Config.extracted_pages_path_without_infobox_dir)
+    without_infobox_page_path_filename = Utils.get_information_filename(Config.extracted_pages_path_without_infobox_dir,
+                                                                        filename)
+    Utils.save_dict_to_json_file(without_infobox_page_path_filename, without_infobox_page_path)
+
+    Utils.create_directory(Config.extracted_page_ids_dir)
+    page_ids_filename = Utils.get_information_filename(Config.extracted_page_ids_dir, filename)
+    Utils.save_dict_to_json_file(page_ids_filename, page_ids)
 
     absolute_resource_path = Config.extracted_pages_without_infobox_dir
-    if len(absolute_resource_path) < 255:
-        Utils.create_directory(absolute_resource_path)
-        for flag in Config.information_flags:
-            information_flag = Config.information_flags[flag]
-            if information_flag != infoboxes_flag:
-                filename = Utils.get_information_filename(absolute_resource_path, filename + '-' + information_flag)
-                Utils.save_dict_to_json_file(filename, without_infoboxes_dict[information_flag])
+    Utils.create_directory(absolute_resource_path)
+
+    revision_ids_filename = Utils.get_information_filename(absolute_resource_path, filename + '-revision_ids')
+    filtered_revision_ids = dict((key, value) for key, value in revision_ids.items()
+                                 if key in without_infobox_list)
+    Utils.save_dict_to_json_file(revision_ids_filename, filtered_revision_ids)
+
+    wiki_texts_filename = Utils.get_information_filename(absolute_resource_path, filename + '-wiki_texts')
+    filtered_wiki_texts = dict((key, value) for key, value in wiki_texts.items()
+                               if key in without_infobox_list)
+    Utils.save_dict_to_json_file(wiki_texts_filename, filtered_wiki_texts)
+
+    abstracts_filename = Utils.get_information_filename(absolute_resource_path, filename + '-abstracts')
+    filtered_abstracts = dict((key, value) for key, value in abstracts.items()
+                              if key in without_infobox_list)
+    Utils.save_dict_to_json_file(abstracts_filename, filtered_abstracts)
+
+    Utils.create_directory(Config.extracted_infoboxes_dir)
+    with open(Utils.get_information_filename(Config.extracted_infoboxes_dir, filename), 'w+', encoding='utf8') as fp:
+        fp.write('[\n')
+        for infobox_name in infoboxes:
+            for infobox_type in infoboxes[infobox_name]:
+                for page_name in infoboxes[infobox_name][infobox_type]:
+                    for infobox in infoboxes[infobox_name][infobox_type][page_name]:
+                        for predicate in infobox:
+                            for value in infobox[predicate]:
+                                json_dict = dict()
+                                json_dict['template_name'] = infobox_name
+                                json_dict['type'] = infobox_type if infobox_type != 'NULL' else None
+                                json_dict['subject'] = 'fa.wikipedia.org/wiki/'+page_name.replace(' ', '_')
+                                json_dict['predicate'] = predicate
+                                json_dict['object'] = value
+                                json_dict['source'] = 'fa.wikipedia.org/wiki/'+page_name.replace(' ', '_')
+                                json_dict['version'] = revision_ids[page_name]
+                                json.dump(json_dict, fp, ensure_ascii=False, indent=2, sort_keys=True)
+                                fp.write('\n,\n')
+        fp.write(']\n')
 
     logging_information_extraction(pages_counter, input_filename)

@@ -1,4 +1,6 @@
 import bz2
+import csv
+import gzip
 import json
 import logging
 import os
@@ -22,14 +24,6 @@ def logging_pages_extraction(pages_number, filename):
 
 def logging_information_extraction(pages_number, filename):
     logging.info('%d Pages Checked from %s!' % (pages_number, filename))
-
-
-def logging_database(msg):
-    logging.exception('%s Error!' % msg)
-
-
-def loggin_id_mapping_error(page_id, func_name):
-    logging.info('Id %d mapping NOT FOUND, in %s function!' % (page_id, func_name))
 
 
 def get_information_filename(info_dir, file_number):
@@ -57,8 +51,8 @@ def find_get_infobox_name_type(template_name):
     return None, None
 
 
-def save_dict_to_json_file(filename, dict_to_save):
-    json_file = open(filename, 'w+', encoding='utf8')
+def save_dict_to_json_file(filename, dict_to_save, encoding='utf8'):
+    json_file = open(filename, 'w+', encoding=encoding)
     json_dumps = json.dumps(dict_to_save, ensure_ascii=False, indent=2, sort_keys=True)
     json_file.write(json_dumps)
     json_file.close()
@@ -101,3 +95,22 @@ def parse_page(xml_page):
     soup = BeautifulSoup(xml_page, "xml")
     page = soup.find('page')
     return page
+
+
+def find_sql_records(line):
+    records_str = line.partition('` VALUES ')[2]
+    records_str = records_str.strip()[1:-2]
+    records = records_str.split('),(')
+    return records
+
+
+def get_sql_rows(file_name, encoding='utf8'):
+    with gzip.open(file_name, 'rt', encoding=encoding, errors='ignore') as f:
+        logging_file_operations(file_name, 'Opened')
+        for line in f:
+            if line.startswith('INSERT INTO '):
+                all_records = find_sql_records(line)
+                for record in all_records:
+                    yield csv.reader([record], delimiter=',', doublequote=False,
+                                     escapechar='\\', quotechar="'", strict=True)
+    logging_file_operations(file_name, 'Closed')
