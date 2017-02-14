@@ -144,7 +144,7 @@ def extract_bz2_dump(filename):
                             wiki_texts, filter_dict=infoboxes[infobox_name][infobox_type])
 
             Utils.save_json(absolute_resource_path, Utils.get_abstracts_filename(filename),
-                            abstracts, infoboxes[infobox_name][infobox_type])
+                            abstracts, filter_dict=infoboxes[infobox_name][infobox_type])
 
     Utils.save_json(Config.extracted_pages_path_with_infobox_dir, filename, with_infobox_page_path)
 
@@ -156,10 +156,10 @@ def extract_bz2_dump(filename):
                     revision_ids, filter_dict=without_infobox_list)
 
     Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_wiki_texts_filename(filename),
-                    wiki_texts, without_infobox_list)
+                    wiki_texts, filter_dict=without_infobox_list)
 
     Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_abstracts_filename(filename),
-                    abstracts, without_infobox_list)
+                    abstracts, filter_dict=without_infobox_list)
 
     Utils.create_directory(Config.extracted_infoboxes_dir)
     with open(Utils.get_information_filename(Config.extracted_infoboxes_dir, filename), 'w+', encoding='utf8') as fp:

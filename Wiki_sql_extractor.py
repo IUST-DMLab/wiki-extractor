@@ -138,4 +138,4 @@ def extract_all():
         Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_external_links_filename(filename),
                         external_links, filter_dict=without_infobox_pages_path)
         Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_wiki_links_filename(filename),
-                        wiki_links, without_infobox_pages_path)
+                        wiki_links, filter_dict=without_infobox_pages_path)
