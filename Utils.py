@@ -87,7 +87,7 @@ def find_get_infobox_name_type(template_name):
     return None, None
 
 
-def save_json(directory, filename, dict_to_save, filter_dict=None, encoding='utf8'):
+def save_json(directory, filename, dict_to_save, filter_dict=None, encoding='utf8', sort_keys=True):
     if filter_dict:
         dict_to_save = dict((key, value) for key, value in dict_to_save.items()
                             if key in filter_dict)
@@ -95,7 +95,7 @@ def save_json(directory, filename, dict_to_save, filter_dict=None, encoding='utf
         create_directory(directory)
         information_filename = get_information_filename(directory, filename)
         json_file = open(information_filename, 'w+', encoding=encoding)
-        json_dumps = json.dumps(dict_to_save, ensure_ascii=False, indent=2, sort_keys=True)
+        json_dumps = json.dumps(dict_to_save, ensure_ascii=False, indent=2, sort_keys=sort_keys)
         json_file.write(json_dumps)
         json_file.close()
 

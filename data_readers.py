@@ -2,6 +2,7 @@ import os
 from os.path import join
 import Utils
 import Config
+from collections import OrderedDict
 
 
 def count_number_of_infoboxes():
@@ -48,7 +49,8 @@ def extract_infobox_properties():
                                     properties[p] += 1
                                 else:
                                     properties[p] = 1
-    Utils.save_json(Config.processed_data_dir, 'infobox_properties', properties)
+    Utils.save_json(Config.processed_data_dir, 'infobox_properties',
+                    OrderedDict(sorted(properties.items(), key=lambda item: item[1], reverse=True)), sort_keys=False)
 
 
 if __name__ == '__main__':
