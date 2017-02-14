@@ -30,6 +30,10 @@ def get_information_filename(info_dir, file_number):
     return join(info_dir, str(file_number)+'.json')
 
 
+def is_infobox_file(filename):
+    return True if 'infoboxes' in filename else False
+
+
 def get_infoboxes_filename(prefix):
     return prefix+'-infoboxes'
 
