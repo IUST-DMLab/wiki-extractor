@@ -30,6 +30,38 @@ def get_information_filename(info_dir, file_number):
     return join(info_dir, str(file_number)+'.json')
 
 
+def get_infoboxes_filename(prefix):
+    return prefix+'-infoboxes'
+
+
+def get_revision_ids_filename(prefix):
+    return prefix+'-revision_ids'
+
+
+def get_wiki_texts_filename(prefix):
+    return prefix+'-wiki_texts'
+
+
+def get_abstracts_filename(prefix):
+    return prefix+'-abstracts'
+
+
+def get_redirects_filename(prefix):
+    return prefix+'-redirects'
+
+
+def get_categories_filename(prefix):
+    return prefix+'-categories'
+
+
+def get_external_links_filename(prefix):
+    return prefix+'-external_links'
+
+
+def get_wiki_links_filename(prefix):
+    return prefix+'-wiki_links'
+
+
 def find_get_infobox_name_type(template_name):
     template_name = clean(str(template_name).lower().replace('_', ' '))
     for name in Config.infobox_flags_en:
@@ -51,11 +83,24 @@ def find_get_infobox_name_type(template_name):
     return None, None
 
 
-def save_dict_to_json_file(filename, dict_to_save, encoding='utf8'):
-    json_file = open(filename, 'w+', encoding=encoding)
-    json_dumps = json.dumps(dict_to_save, ensure_ascii=False, indent=2, sort_keys=True)
-    json_file.write(json_dumps)
-    json_file.close()
+def save_json(directory, filename, dict_to_save, filter_dict=None, encoding='utf8'):
+    if filter_dict:
+        dict_to_save = dict((key, value) for key, value in dict_to_save.items()
+                            if key in filter_dict)
+    if len(directory) < 255:
+        create_directory(directory)
+        information_filename = get_information_filename(directory, filename)
+        json_file = open(information_filename, 'w+', encoding=encoding)
+        json_dumps = json.dumps(dict_to_save, ensure_ascii=False, indent=2, sort_keys=True)
+        json_file.write(json_dumps)
+        json_file.close()
+
+
+def load_json(directory, filename, encoding='utf8'):
+    information_filename = get_information_filename(directory, filename)
+    information_file = open(information_filename, encoding=encoding).read()
+    information = json.loads(information_file, encoding=encoding)
+    return information
 
 
 def create_directory(directory, show_logging=False):

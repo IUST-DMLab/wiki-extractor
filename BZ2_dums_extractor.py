@@ -6,6 +6,7 @@ import re
 from os.path import join
 
 import wikitextparser as wtp
+from joblib import Parallel, delayed
 
 import Config
 import Utils
@@ -51,7 +52,7 @@ def extract_bz2_dump(filename):
     abstracts = dict()
 
     with_infobox_page_path = dict()
-    without_infobox_list = list()
+    without_infobox_list = set()
 
     pages_counter = 0
     input_filename = join(Config.extracted_pages_articles_dir, filename)
@@ -117,70 +118,48 @@ def extract_bz2_dump(filename):
                 infoboxes[infobox_name][infobox_type][page_name].append(infobox)
 
             else:
-                without_infobox_list.append(page_name)
+                without_infobox_list.add(page_name)
 
         del templates
         del wiki_text
 
     for infobox_name in infoboxes:
         for infobox_type in infoboxes[infobox_name]:
+            path = join(infobox_name, infobox_type)
+            if path not in with_infobox_page_path:
+                with_infobox_page_path[path] = list()
+
+            for key in infoboxes[infobox_name][infobox_type]:
+                with_infobox_page_path[path].append(key)
+
             absolute_resource_path = join(Config.extracted_pages_with_infobox_dir, infobox_name, infobox_type)
-            if len(absolute_resource_path) < 255:
-                Utils.create_directory(absolute_resource_path)
 
-                with_infobox_page_path.update(dict((key, [infobox_name, infobox_type, filename])
-                                                   for key in infoboxes[infobox_name][infobox_type]))
+            Utils.save_json(absolute_resource_path, Utils.get_infoboxes_filename(filename),
+                            infoboxes[infobox_name][infobox_type])
 
-                infoboxes_filename = Utils.get_information_filename(absolute_resource_path, filename+'-infoboxes')
-                Utils.save_dict_to_json_file(infoboxes_filename, infoboxes[infobox_name][infobox_type])
+            Utils.save_json(absolute_resource_path, Utils.get_revision_ids_filename(filename),
+                            revision_ids, filter_dict=infoboxes[infobox_name][infobox_type])
 
-                revision_ids_filename = Utils.get_information_filename(absolute_resource_path, filename+'-revision_ids')
-                filtered_revision_ids = dict((key, value) for key, value in revision_ids.items()
-                                             if key in infoboxes[infobox_name][infobox_type])
-                Utils.save_dict_to_json_file(revision_ids_filename, filtered_revision_ids)
+            Utils.save_json(absolute_resource_path, Utils.get_wiki_texts_filename(filename),
+                            wiki_texts, filter_dict=infoboxes[infobox_name][infobox_type])
 
-                wiki_texts_filename = Utils.get_information_filename(absolute_resource_path, filename+'-wiki_texts')
-                filtered_wiki_texts = dict((key, value) for key, value in wiki_texts.items()
-                                           if key in infoboxes[infobox_name][infobox_type])
-                Utils.save_dict_to_json_file(wiki_texts_filename, filtered_wiki_texts)
+            Utils.save_json(absolute_resource_path, Utils.get_abstracts_filename(filename),
+                            abstracts, infoboxes[infobox_name][infobox_type])
 
-                abstracts_filename = Utils.get_information_filename(absolute_resource_path, filename+'-abstracts')
-                filtered_abstracts = dict((key, value) for key, value in abstracts.items()
-                                          if key in infoboxes[infobox_name][infobox_type])
-                Utils.save_dict_to_json_file(abstracts_filename, filtered_abstracts)
+    Utils.save_json(Config.extracted_pages_path_with_infobox_dir, filename, with_infobox_page_path)
 
-    Utils.create_directory(Config.extracted_pages_path_with_infobox_dir)
-    with_infobox_page_path_filename = Utils.get_information_filename(Config.extracted_pages_path_with_infobox_dir,
-                                                                     filename)
-    Utils.save_dict_to_json_file(with_infobox_page_path_filename, with_infobox_page_path)
+    Utils.save_json(Config.extracted_pages_path_without_infobox_dir, filename, list(without_infobox_list))
 
-    without_infobox_page_path = dict((key, [filename]) for key in without_infobox_list)
-    Utils.create_directory(Config.extracted_pages_path_without_infobox_dir)
-    without_infobox_page_path_filename = Utils.get_information_filename(Config.extracted_pages_path_without_infobox_dir,
-                                                                        filename)
-    Utils.save_dict_to_json_file(without_infobox_page_path_filename, without_infobox_page_path)
+    Utils.save_json(Config.extracted_page_ids_dir, filename, page_ids)
 
-    Utils.create_directory(Config.extracted_page_ids_dir)
-    page_ids_filename = Utils.get_information_filename(Config.extracted_page_ids_dir, filename)
-    Utils.save_dict_to_json_file(page_ids_filename, page_ids)
+    Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_revision_ids_filename(filename),
+                    revision_ids, filter_dict=without_infobox_list)
 
-    absolute_resource_path = Config.extracted_pages_without_infobox_dir
-    Utils.create_directory(absolute_resource_path)
+    Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_wiki_texts_filename(filename),
+                    wiki_texts, without_infobox_list)
 
-    revision_ids_filename = Utils.get_information_filename(absolute_resource_path, filename + '-revision_ids')
-    filtered_revision_ids = dict((key, value) for key, value in revision_ids.items()
-                                 if key in without_infobox_list)
-    Utils.save_dict_to_json_file(revision_ids_filename, filtered_revision_ids)
-
-    wiki_texts_filename = Utils.get_information_filename(absolute_resource_path, filename + '-wiki_texts')
-    filtered_wiki_texts = dict((key, value) for key, value in wiki_texts.items()
-                               if key in without_infobox_list)
-    Utils.save_dict_to_json_file(wiki_texts_filename, filtered_wiki_texts)
-
-    abstracts_filename = Utils.get_information_filename(absolute_resource_path, filename + '-abstracts')
-    filtered_abstracts = dict((key, value) for key, value in abstracts.items()
-                              if key in without_infobox_list)
-    Utils.save_dict_to_json_file(abstracts_filename, filtered_abstracts)
+    Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_abstracts_filename(filename),
+                    abstracts, without_infobox_list)
 
     Utils.create_directory(Config.extracted_infoboxes_dir)
     with open(Utils.get_information_filename(Config.extracted_infoboxes_dir, filename), 'w+', encoding='utf8') as fp:
@@ -204,3 +183,12 @@ def extract_bz2_dump(filename):
         fp.write(']\n')
 
     logging_information_extraction(pages_counter, input_filename)
+
+
+def extract_all():
+    extract_wikipedia_bz2_dump(Config.fawiki_latest_pages_articles_dump, Config.extracted_pages_articles_dir)
+    extract_wikipedia_bz2_dump(Config.fawiki_latest_pages_meta_current_dump, Config.extracted_pages_meta_current_dir)
+
+    extracted_pages_files = os.listdir(Config.extracted_pages_articles_dir)
+    if extracted_pages_files:
+        Parallel(n_jobs=4)(delayed(extract_bz2_dump)(filename) for filename in extracted_pages_files)

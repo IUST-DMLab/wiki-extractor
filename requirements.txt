@@ -1,4 +1,3 @@
 joblib
 wikitextparser
 bs4
-PyMySQL

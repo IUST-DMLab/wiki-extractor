@@ -1,4 +1,6 @@
+import os
 from collections import defaultdict
+from os.path import join
 
 import Config
 import Utils
@@ -13,9 +15,7 @@ def get_id_mapping(page_sql_file):
             page_id, page_namespace, page_title = columns[0], columns[1], columns[2]
             page_ids[page_id] = page_title
 
-    Utils.create_directory(Config.extracted_page_ids_dir)
-    filename = Utils.get_information_filename(Config.extracted_jsons, 'page_ids')
-    Utils.save_dict_to_json_file(filename, page_ids)
+    Utils.save_json(Config.extracted_jsons, 'page_ids', page_ids)
     return page_ids
 
 
@@ -35,11 +35,8 @@ def get_lang_links(id_map):
                 elif ll_lang == 'ar':
                     lang_links_ar[ll_from] = ll_title
 
-    Utils.create_directory(Config.extracted_jsons)
-    en_filename = Utils.get_information_filename(Config.extracted_jsons, 'en_lang_links')
-    ar_filename = Utils.get_information_filename(Config.extracted_jsons, 'ar_lang_links')
-    Utils.save_dict_to_json_file(en_filename, lang_links_en)
-    Utils.save_dict_to_json_file(ar_filename, lang_links_ar)
+    Utils.save_json(Config.extracted_jsons, 'en_lang_links', lang_links_en)
+    Utils.save_json(Config.extracted_jsons, 'ar_lang_links', lang_links_ar)
 
 
 def get_redirect(id_map):
@@ -62,15 +59,10 @@ def get_redirect(id_map):
                 redirects[ns][r_from] = r_title
                 reverse_redirects[ns][r_title].append(r_from)
 
-    Utils.create_directory(Config.extracted_redirects_dir)
-    Utils.create_directory(Config.extracted_reverse_redirects_dir)
-
     for ns in redirects:
-        filename = Utils.get_information_filename(Config.extracted_redirects_dir, ns+'-redirects')
-        Utils.save_dict_to_json_file(filename, redirects[ns])
+        Utils.save_json(Config.extracted_redirects_dir, Utils.get_redirects_filename(ns), redirects[ns])
     for ns in reverse_redirects:
-        filename = Utils.get_information_filename(Config.extracted_reverse_redirects_dir, ns+'-redirects')
-        Utils.save_dict_to_json_file(filename, reverse_redirects[ns])
+        Utils.save_json(Config.extracted_reverse_redirects_dir, Utils.get_redirects_filename(ns), reverse_redirects[ns])
 
 
 def get_category_link(id_map):
@@ -115,11 +107,35 @@ def get_wiki_link(id_map):
     return wiki_links
 
 
-def main():
+def extract_all():
     id_map = get_id_mapping(Config.fawiki_latest_page_dump)
     get_lang_links(id_map)
     get_redirect(id_map)
 
+    page_ids_files = os.listdir(Config.extracted_page_ids_dir)
+    for filename in page_ids_files:
+        filename = filename.replace('.json', '')
+        id_map = Utils.load_json(Config.extracted_page_ids_dir, filename)
+        category_links = get_category_link(id_map)
+        external_links = get_external_link(id_map)
+        wiki_links = get_wiki_link(id_map)
 
-if __name__ == '__main__':
-    main()
+        with_infobox_pages_path = Utils.load_json(Config.extracted_pages_path_with_infobox_dir, filename)
+
+        for path in with_infobox_pages_path:
+            absolute_resource_path = join(Config.extracted_pages_with_infobox_dir, path)
+            Utils.save_json(absolute_resource_path, Utils.get_categories_filename(filename),
+                            category_links, filter_dict=with_infobox_pages_path[path])
+            Utils.save_json(absolute_resource_path, Utils.get_external_links_filename(filename),
+                            external_links, filter_dict=with_infobox_pages_path[path])
+            Utils.save_json(absolute_resource_path, Utils.get_wiki_links_filename(filename),
+                            wiki_links, filter_dict=with_infobox_pages_path[path])
+
+        without_infobox_pages_path = Utils.load_json(Config.extracted_pages_path_without_infobox_dir, filename)
+
+        Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_categories_filename(filename),
+                        category_links, filter_dict=without_infobox_pages_path)
+        Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_external_links_filename(filename),
+                        external_links, filter_dict=without_infobox_pages_path)
+        Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_wiki_links_filename(filename),
+                        wiki_links, without_infobox_pages_path)
