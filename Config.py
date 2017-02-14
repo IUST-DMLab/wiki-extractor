@@ -21,6 +21,8 @@ extracted_redirects_dir = join(extracted_jsons, 'redirects')
 extracted_reverse_redirects_dir = join(extracted_jsons, 'reverse_redirects')
 extracted_disambiguation_dir = join(extracted_dir, 'disambiguation')
 
+processed_data_dir = join(resources_dir, 'processed_data')
+
 fawiki_latest_pages_articles_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pages-articles.xml.bz2')
 fawiki_latest_pages_meta_current_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pages-meta-current.xml.bz2')
 
