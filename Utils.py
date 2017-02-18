@@ -166,7 +166,7 @@ def get_sql_rows(file_name, encoding='utf8'):
     logging_file_operations(file_name, 'Closed')
 
 
-#leila 1.12.95
+# leila 1.12.95
 def detect_language(s):
     try:
         s.encode('ascii')

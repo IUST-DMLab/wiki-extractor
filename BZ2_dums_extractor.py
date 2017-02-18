@@ -52,6 +52,7 @@ def get_template_name_type(template_name):
             return template_name,'template', lang
 # end
 
+
 def extract_wikipedia_bz2_dump(input_filename, output_dir):
     Utils.create_directory(output_dir, show_logging=True)
     if not os.listdir(output_dir):
