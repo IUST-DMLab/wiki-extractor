@@ -49,7 +49,10 @@ def get_disambiguation_links_regular(content, exception_list):
             start_index = sentence.find('[[')
             sub_str.append(sentence[start_index:(end_index + 2)])
 
-            #exception_list.append(sentence)
+        regex_exception = re.compile(r'(?:^\*.*\[\[.+?\]\])')
+        result = regex.match(sentence)
+        if not (str(result) == 'None'):
+            exception_list.append(sentence)
 
     return sub_str
 
@@ -65,8 +68,8 @@ def extract_disambiguation(filename):
     count = 0
     for page in get_wikipedia_pages(input_filename):
 
-        # if count == 50:
-        #     break
+        if count == 10:
+            break
         parsed_page = parse_page(page)
         wiki_text = parsed_page.revision.find('text').text
 
@@ -222,7 +225,6 @@ def extract_template(filename):
 
         if count == 200:
             break
-
         parsed_page = parse_page(page)
         if parsed_page.ns.text == '10':
 
@@ -233,7 +235,7 @@ def extract_template(filename):
 
             dict_template['template_name'] = template_name
             dict_template['type'] = template_type
-            dict_template['language'] = lang
+            dict_template['language_name'] = lang
             list_template.append(dict_template)
 
     Utils.save_json(Config.extracted_disambiguation_dir, filename, list_template)
@@ -251,8 +253,7 @@ def detect_language(s):
 def get_template_name_type(template_name):
 
     template_name = clean(str(template_name).lower().replace('الگو:', ' '))
-    #lang = detect(template_name)
-    lang = detect_language(template_name)
+    lang = Utils.detect_language(template_name)
 
     if lang == 'fa':
 
@@ -261,9 +262,11 @@ def get_template_name_type(template_name):
             template_type = 'infobox'
 
             return infobox_name, template_type, lang
+        elif any(s in template_name for s in Config.stub_flag_fa):
+            return template_name, 'stub', lang
 
         else:
-            return template_name,'template', lang
+            return template_name, 'template', lang
     else:
         template_name = clean(str(template_name).lower().replace('_', ' '))
 
@@ -273,17 +276,18 @@ def get_template_name_type(template_name):
             template_type = 'infobox'
 
             return infobox_name, template_type, lang
-        if any(s in template_name for s in Config.stub_flag_en):
+        elif any(s in template_name for s in Config.stub_flag_en):
 
             stub_name = template_name
             template_type = 'stub'
 
             return stub_name, template_type, lang
+
         else:
-            return template_name,'template', lang
+            return template_name, 'template', lang
 
 
 if __name__ == '__main__':
     #get_path_name('path')
     extract_disambiguation('disambiguation')
-    #extract_template('template')
+    #extract_template('template123')

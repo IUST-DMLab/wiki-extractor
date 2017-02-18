@@ -46,3 +46,5 @@ redirect_flags = ['#تغییر_مسیر', '#تغییرمسیر', '#REDIRECT', '#
 disambigution_flags = ['رفع‌ابهام‌', 'رفع ابهام', 'ابهام‌زدایی', 'ابهام زدایی']
 
 stub_flag_en = ['stub']
+
+stub_flag_fa = ['ـخرد', '-خرد']

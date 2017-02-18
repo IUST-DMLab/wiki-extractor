@@ -30,9 +30,11 @@ def get_template_name_type(template_name):
             template_type = 'infobox'
 
             return infobox_name, template_type, lang
+        elif any(s in template_name for s in Config.stub_flag_fa):
+            return template_name, 'stub', lang
 
         else:
-            return template_name,'template', lang
+            return template_name, 'template', lang
     else:
         template_name = clean(str(template_name).lower().replace('_', ' '))
 
@@ -42,14 +44,16 @@ def get_template_name_type(template_name):
             template_type = 'infobox'
 
             return infobox_name, template_type, lang
-        if any(s in template_name for s in Config.stub_flag_en):
+        elif any(s in template_name for s in Config.stub_flag_en):
 
             stub_name = template_name
             template_type = 'stub'
 
             return stub_name, template_type, lang
+
         else:
-            return template_name,'template', lang
+            return template_name, 'template', lang
+
 # end
 
 
@@ -112,7 +116,7 @@ def extract_bz2_dump(filename):
 
             dict_template['template_name'] = template_name
             dict_template['type'] = template_type
-            dict_template['language'] = lang
+            dict_template['language_name'] = lang
             list_template.append(dict_template)
         # end
 
