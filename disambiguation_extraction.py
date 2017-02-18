@@ -10,7 +10,7 @@ import operator
 from ThirdParty.WikiCleaner import clean
 
 
-def get_disambiguation_links(content,exception_list):
+def get_disambiguation_links(content, exception_list):
 
     # for test
     sentences = content.splitlines()
@@ -31,7 +31,7 @@ def get_disambiguation_links(content,exception_list):
     return sub_str
 
 
-def get_disambiguation_links_regular(content,exception_list):
+def get_disambiguation_links_regular(content, exception_list):
 
     # for test
     sentences = content.splitlines()
@@ -65,8 +65,8 @@ def extract_disambiguation(filename):
     count = 0
     for page in get_wikipedia_pages(input_filename):
 
-        if count == 50:
-            break
+        # if count == 50:
+        #     break
         parsed_page = parse_page(page)
         wiki_text = parsed_page.revision.find('text').text
 
@@ -79,8 +79,7 @@ def extract_disambiguation(filename):
 
             if any(names in s.name for s in parse_wiki_text.templates):
                 count += 1
-                # if 'نظامی' in parsed_page.title.text:
-                #     print('نظامی')
+
                 json_dict['title'] = parsed_page.title.text
                 json_dict['field'] = get_disambiguation_links_regular(str(parsed_page.contents), exception_list)
                 json_list.append(json_dict)
@@ -285,6 +284,6 @@ def get_template_name_type(template_name):
 
 
 if __name__ == '__main__':
-    #get_path_name('path1')
-    extract_disambiguation('dd')
-    #extract_template('123')
+    #get_path_name('path')
+    extract_disambiguation('disambiguation')
+    #extract_template('template')
