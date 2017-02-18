@@ -67,6 +67,7 @@ def get_wiki_links_filename(prefix):
 
 
 def find_get_infobox_name_type(template_name):
+
     template_name = clean(str(template_name).lower().replace('_', ' '))
     for name in Config.infobox_flags_en:
         if name in template_name:
@@ -163,3 +164,13 @@ def get_sql_rows(file_name, encoding='utf8'):
                     yield csv.reader([record], delimiter=',', doublequote=False,
                                      escapechar='\\', quotechar="'", strict=True)
     logging_file_operations(file_name, 'Closed')
+
+
+#leila 1.12.95
+def detect_language(s):
+    try:
+        s.encode('ascii')
+    except UnicodeEncodeError:
+        return 'fa'
+    else:
+        return 'en'

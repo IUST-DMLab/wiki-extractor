@@ -7,15 +7,18 @@ from Utils import get_wikipedia_pages
 from Utils import parse_page
 import wikitextparser as wtp
 import operator
+from ThirdParty.WikiCleaner import clean
 
 
 def get_disambiguation_links(content,exception_list):
 
+    # for test
     sentences = content.splitlines()
 
     sub_str = []
     exception_list =[]
     for sentence in sentences:
+
         if sentence.startswith('*'):
             end_index = sentence.find(']]')
             start_index = sentence.find('[[')
@@ -28,6 +31,29 @@ def get_disambiguation_links(content,exception_list):
     return sub_str
 
 
+def get_disambiguation_links_regular(content,exception_list):
+
+    # for test
+    sentences = content.splitlines()
+
+    sub_str = []
+    exception_list =[]
+    for sentence in sentences:
+        if 'جستارهای وابسته' in sentence:
+            break
+       # sentence = '*[[a]] jh'
+        regex = re.compile(r'(?:^\* *\[\[.+?\]\])')
+        result = regex.match(sentence)
+        if not (str(result) == 'None'):
+            end_index = sentence.find(']]')
+            start_index = sentence.find('[[')
+            sub_str.append(sentence[start_index:(end_index + 2)])
+
+            #exception_list.append(sentence)
+
+    return sub_str
+
+
 def extract_disambiguation(filename):
     disambiguation_filename = Utils.get_information_filename(Config.extracted_disambiguation_dir, filename)
 
@@ -36,11 +62,11 @@ def extract_disambiguation(filename):
 
     json_list = []
     exception_list = []
-    #count = 0
+    count = 0
     for page in get_wikipedia_pages(input_filename):
 
-        # if count == 50:
-        #     break
+        if count == 50:
+            break
         parsed_page = parse_page(page)
         wiki_text = parsed_page.revision.find('text').text
 
@@ -52,11 +78,11 @@ def extract_disambiguation(filename):
         for names in disambiguation_name:
 
             if any(names in s.name for s in parse_wiki_text.templates):
-                # count = count + 1
-                # if 'پهلوی' in parsed_page.title.text:
-                #     print('پهلوی')
+                count += 1
+                # if 'نظامی' in parsed_page.title.text:
+                #     print('نظامی')
                 json_dict['title'] = parsed_page.title.text
-                json_dict['field'] = get_disambiguation_links(str(parsed_page.contents),exception_list)
+                json_dict['field'] = get_disambiguation_links_regular(str(parsed_page.contents), exception_list)
                 json_list.append(json_dict)
 
     disambiguation_file = open(disambiguation_filename, 'w+', encoding='utf8')
@@ -185,7 +211,80 @@ def get_path_name(filename):
 
     path_name_file.close()
 
-if __name__ == '__main__':
-    get_path_name('path1')
-    #extract_disambiguation('disambiguation')
 
+def extract_template(filename):
+
+    input_filename = Config.fawiki_latest_pages_meta_current_dump
+    wikipedia_pages = get_wikipedia_pages(input_filename)
+
+    count = 0
+    list_template = []
+    for page in get_wikipedia_pages(input_filename):
+
+        if count == 200:
+            break
+
+        parsed_page = parse_page(page)
+        if parsed_page.ns.text == '10':
+
+            count += 1
+
+            dict_template = {}
+            template_name, template_type, lang = get_template_name_type(parsed_page.title.text)
+
+            dict_template['template_name'] = template_name
+            dict_template['type'] = template_type
+            dict_template['language'] = lang
+            list_template.append(dict_template)
+
+    Utils.save_json(Config.extracted_disambiguation_dir, filename, list_template)
+
+
+def detect_language(s):
+    try:
+        s.encode('ascii')
+    except UnicodeEncodeError:
+        return 'fa'
+    else:
+        return 'en'
+
+
+def get_template_name_type(template_name):
+
+    template_name = clean(str(template_name).lower().replace('الگو:', ' '))
+    #lang = detect(template_name)
+    lang = detect_language(template_name)
+
+    if lang == 'fa':
+
+        if any(s in template_name for s in Config.infobox_flags_fa):
+            infobox_name = template_name
+            template_type = 'infobox'
+
+            return infobox_name, template_type, lang
+
+        else:
+            return template_name,'template', lang
+    else:
+        template_name = clean(str(template_name).lower().replace('_', ' '))
+
+        if any(s in template_name for s in Config.infobox_flags_en):
+
+            infobox_name = template_name
+            template_type = 'infobox'
+
+            return infobox_name, template_type, lang
+        if any(s in template_name for s in Config.stub_flag_en):
+
+            stub_name = template_name
+            template_type = 'stub'
+
+            return stub_name, template_type, lang
+        else:
+            return template_name,'template', lang
+
+
+if __name__ == '__main__':
+    #get_path_name('path1')
+    extract_disambiguation('dd')
+    #extract_template('123')

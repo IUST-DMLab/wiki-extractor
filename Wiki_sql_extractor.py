@@ -1,7 +1,6 @@
 import os
 from collections import defaultdict
 from os.path import join
-
 import Config
 import Utils
 

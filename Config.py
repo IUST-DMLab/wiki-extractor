@@ -19,7 +19,10 @@ extracted_page_ids_dir = join(extracted_dir, 'page_ids')
 extracted_jsons = join(extracted_dir, 'jsons')
 extracted_redirects_dir = join(extracted_jsons, 'redirects')
 extracted_reverse_redirects_dir = join(extracted_jsons, 'reverse_redirects')
+# leila 1.12.95
 extracted_disambiguation_dir = join(extracted_dir, 'disambiguation')
+extracted_template_name_dir = join(extracted_dir, 'template_name')
+# end
 
 processed_data_dir = join(resources_dir, 'processed_data')
 
@@ -41,3 +44,5 @@ infobox_flags_fa = ['جعبه اطلاعات', 'جعبه']
 redirect_flags = ['#تغییر_مسیر', '#تغییرمسیر', '#REDIRECT', '#redirect']
 
 disambigution_flags = ['رفع‌ابهام‌', 'رفع ابهام', 'ابهام‌زدایی', 'ابهام زدایی']
+
+stub_flag_en = ['stub']

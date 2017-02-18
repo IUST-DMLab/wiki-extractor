@@ -17,6 +17,41 @@ from Utils import logging_file_operations, logging_pages_extraction, get_wikiped
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s ', level=logging.DEBUG)
 
 
+# leila 1.12.95
+def get_template_name_type(template_name):
+
+    template_name = clean(str(template_name).lower().replace('الگو:', ' '))
+    lang = Utils.detect_language(template_name)
+
+    if lang == 'fa':
+
+        if any(s in template_name for s in Config.infobox_flags_fa):
+            infobox_name = template_name
+            template_type = 'infobox'
+
+            return infobox_name, template_type, lang
+
+        else:
+            return template_name,'template', lang
+    else:
+        template_name = clean(str(template_name).lower().replace('_', ' '))
+
+        if any(s in template_name for s in Config.infobox_flags_en):
+
+            infobox_name = template_name
+            template_type = 'infobox'
+
+            return infobox_name, template_type, lang
+        if any(s in template_name for s in Config.stub_flag_en):
+
+            stub_name = template_name
+            template_type = 'stub'
+
+            return stub_name, template_type, lang
+        else:
+            return template_name,'template', lang
+# end
+
 def extract_wikipedia_bz2_dump(input_filename, output_dir):
     Utils.create_directory(output_dir, show_logging=True)
     if not os.listdir(output_dir):
@@ -45,6 +80,7 @@ def extract_wikipedia_bz2_dump(input_filename, output_dir):
 
 
 def extract_bz2_dump(filename):
+
     infoboxes = dict()
     page_ids = dict()
     revision_ids = dict()
@@ -53,6 +89,10 @@ def extract_bz2_dump(filename):
 
     with_infobox_page_path = dict()
     without_infobox_list = set()
+
+    # leila 1.12.95 --->start
+    list_template = []
+    # end
 
     pages_counter = 0
     input_filename = join(Config.extracted_pages_articles_dir, filename)
@@ -63,6 +103,17 @@ def extract_bz2_dump(filename):
         if pages_counter % Config.logging_interval == 0:
             logging_information_extraction(pages_counter, input_filename)
             gc.collect()
+
+        # leila 1.12.95
+        if parsed_page.ns.text == '10':
+            dict_template = {}
+            template_name, template_type, lang = get_template_name_type(parsed_page.title.text)
+
+            dict_template['template_name'] = template_name
+            dict_template['type'] = template_type
+            dict_template['language'] = lang
+            list_template.append(dict_template)
+        # end
 
         if parsed_page.ns.text != '0':
             continue
@@ -160,6 +211,10 @@ def extract_bz2_dump(filename):
 
     Utils.save_json(Config.extracted_pages_without_infobox_dir, Utils.get_abstracts_filename(filename),
                     abstracts, filter_dict=without_infobox_list)
+
+    # leila 1.12.95 --->start
+    Utils.save_json(Config.extracted_template_name_dir, 'template_name', list_template)
+    # end
 
     Utils.create_directory(Config.extracted_infoboxes_dir)
     with open(Utils.get_information_filename(Config.extracted_infoboxes_dir, filename), 'w+', encoding='utf8') as fp:
