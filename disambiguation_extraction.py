@@ -171,7 +171,7 @@ def get_attribute_name(filename, attribute_type):
     attribute_names = {}
 
     count = 0
-    for my_id,dstFile in enumerate(main_list):
+    for my_id, dstFile in enumerate(main_list):
 
         # count = count + 1
         # if count == 4:

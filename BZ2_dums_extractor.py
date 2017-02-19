@@ -218,7 +218,7 @@ def extract_bz2_dump(filename):
                     abstracts, filter_dict=without_infobox_list)
 
     # leila 1.12.95 --->start
-    Utils.save_json(Config.extracted_template_name_dir, 'template_name', list_template)
+    Utils.save_json(Config.extracted_template_name_dir, 'wiki_farsi_templates', list_template)
     # end
 
     Utils.create_directory(Config.extracted_infoboxes_dir)
