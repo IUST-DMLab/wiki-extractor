@@ -66,6 +66,50 @@ def get_wiki_links_filename(prefix):
     return prefix+'-wiki_links'
 
 
+def get_infobox_lang(infobox_name):
+    if infobox_name in Config.infobox_flags_en:
+        return 'en'
+    elif infobox_name in Config.infobox_flags_fa:
+        return 'fa'
+    else:
+        return None
+
+
+def get_wiki_article_in_template_statistic_sql_dump(rows, order):
+    table_name = 'wiki_article_in_template_statistic'
+    command = "INSERT INTO `%s` VALUES " % table_name
+    for i, row in enumerate(rows):
+        command += "('%s','%s','%s',%s)," % (row[order[0]].replace("'", "''"), row[order[1]].replace("'", "''"),
+                                             row[order[2]].replace("'", "''"), row[order[3]])
+        if (i+1) % 100 == 0:
+            command = command[:-1] + ";\nINSERT INTO `%s` VALUES " % table_name
+
+    command = command[:-1] + ";"
+    return command
+
+
+def get_wiki_template_redirect_sql_dump(redirects):
+    table_name = 'wiki_template_redirect'
+    command = "INSERT INTO `%s` VALUES " % table_name
+    for i, redirect_from in enumerate(redirects):
+        redirect_to = redirects[redirect_from]
+        command += "('%s','%s')," % (redirect_from.replace("'", "''"), redirect_to.replace("'", "''"))
+        if (i+1) % 100 == 0:
+            command = command[:-1] + ";\nINSERT INTO `%s` VALUES " % table_name
+
+    command = command[:-1] + ";"
+    return command
+
+
+def save_sql_dump(directory, filename, sql_dump, encoding='utf8'):
+    if len(directory) < 255:
+        create_directory(directory)
+        sql_filename = join(directory, filename)
+        sql_file = open(sql_filename, 'w+', encoding=encoding)
+        sql_file.write(sql_dump)
+        sql_file.close()
+
+
 def find_get_infobox_name_type(template_name):
     template_name = clean(str(template_name).lower().replace('_', ' '))
     for name in Config.infobox_flags_en:
