@@ -18,15 +18,21 @@ def count_number_of_infoboxes():
             else:
                 infobox_counters[infobox_name_type] = len(pages_path[infobox_name_type])
 
-        for infobox_name_type in infobox_counters:
-            slash_index = infobox_name_type.index('/')
-            template_name = infobox_name_type[:slash_index]
-            template_type = infobox_name_type[slash_index+1:]
-            triple_counters.append({'template_name': template_name,
-                                    'template_type': template_type,
-                                    'count': infobox_counters[infobox_name_type]})
+    for infobox_name_type in infobox_counters:
+        slash_index = infobox_name_type.index('/')
+        template_name = infobox_name_type[:slash_index]
+        template_type = infobox_name_type[slash_index+1:]
+        triple_counters.append({'template_name': template_type,
+                                'template_type': template_name,
+                                'language': Utils.get_infobox_lang(template_name),
+                                'count': infobox_counters[infobox_name_type]})
 
-    Utils.save_json(Config.processed_data_dir, 'templates_counter', triple_counters)
+    Utils.save_json(Config.processed_data_dir, 'templates_counter',
+                    sorted(triple_counters, key=lambda item: item['count'], reverse=True), sort_keys=False)
+
+    order = ['template_name', 'template_type', 'language', 'count']
+    sql_dump = Utils.get_wiki_article_in_template_statistic_sql_dump(triple_counters, order)
+    Utils.save_sql_dump(Config.processed_data_dir, 'templates_counter.sql', sql_dump)
 
 
 def extract_infobox_properties():
@@ -54,5 +60,5 @@ def extract_infobox_properties():
 
 
 if __name__ == '__main__':
-    # count_number_of_infoboxes()
-    extract_infobox_properties()
+    count_number_of_infoboxes()
+    # extract_infobox_properties()

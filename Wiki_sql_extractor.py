@@ -1,12 +1,8 @@
 import os
 from collections import defaultdict
 from os.path import join
-from hazm import *
-
 import Config
 import Utils
-
-normalizer = Normalizer()
 
 
 def get_id_mapping(page_sql_file):
@@ -52,26 +48,20 @@ def get_redirect(id_map):
             r_from, ns, r_title = columns[0], columns[1], columns[2]
             if r_from in id_map:
                 r_from = id_map[r_from]
-                # r_from = normalizer.normalize(id_map[r_from])
-                if r_from != r_title:
-                    r_from = r_from.replace('_', ' ')
-                    r_title = r_title.replace('_', ' ')
-                    if ns not in redirects:
-                        redirects[ns] = dict()
-                    if ns not in reverse_redirects:
-                        reverse_redirects[ns] = dict()
-                    if r_title not in reverse_redirects[ns]:
-                        reverse_redirects[ns][r_title] = list()
-                    redirects[ns][r_from] = r_title
-                    reverse_redirects[ns][r_title].append(r_from)
+
+                if ns not in redirects:
+                    redirects[ns] = dict()
+                if ns not in reverse_redirects:
+                    reverse_redirects[ns] = dict()
+                if r_title not in reverse_redirects[ns]:
+                    reverse_redirects[ns][r_title] = list()
+                redirects[ns][r_from] = r_title
+                reverse_redirects[ns][r_title].append(r_from)
 
     for ns in redirects:
         Utils.save_json(Config.extracted_redirects_dir, Utils.get_redirects_filename(ns), redirects[ns])
     for ns in reverse_redirects:
         Utils.save_json(Config.extracted_reverse_redirects_dir, Utils.get_redirects_filename(ns), reverse_redirects[ns])
-
-    sql_dump = Utils.get_wiki_template_redirect_sql_dump(redirects['10'])
-    Utils.save_sql_dump(Config.extracted_redirects_dir, '10-redirects.sql', sql_dump)
 
 
 def get_category_link(id_map):
