@@ -38,6 +38,11 @@ fawiki_latest_page_dump = join(wikipedia_dumps_dir, 'fawiki-latest-page.sql.gz')
 fawiki_latest_page_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pagelinks.sql.gz')
 fawiki_latest_redirect_dump = join(wikipedia_dumps_dir, 'fawiki-latest-redirect.sql.gz')
 
+extracted_en_lang_link_file_name = 'en_lang_links'
+extracted_ar_lang_link_file_name = 'ar_lang_links'
+extracted_infobox_mapping = 'infobox-mapping'
+
+
 infobox_flags_en = ['infobox', 'taxobox', 'drugbox', 'geobox', 'ionbox', 'planetbox', 'chembox',
                     'starbox', 'drugclassbox', 'speciesbox', 'comiccharacterbox']
 
