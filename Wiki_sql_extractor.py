@@ -38,8 +38,8 @@ def get_lang_links(id_map):
                 elif ll_lang == 'ar':
                     lang_links_ar[ll_from] = ll_title
 
-    Utils.save_json(Config.extracted_jsons, 'en_lang_links', lang_links_en)
-    Utils.save_json(Config.extracted_jsons, 'ar_lang_links', lang_links_ar)
+    Utils.save_json(Config.extracted_jsons, Config.extracted_en_lang_link_file_name, lang_links_en)
+    Utils.save_json(Config.extracted_jsons, Config.extracted_ar_lang_link_file_name, lang_links_ar)
 
 
 def get_redirect(id_map):
