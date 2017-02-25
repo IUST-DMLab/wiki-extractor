@@ -31,7 +31,7 @@ def count_number_of_infoboxes():
                     sorted(triple_counters, key=lambda item: item['count'], reverse=True), sort_keys=False)
 
     order = ['template_name', 'template_type', 'language', 'count']
-    sql_dump = Utils.get_wiki_article_in_template_statistic_sql_dump(triple_counters, order)
+    sql_dump = Utils.get_wiki_templates_transcluded_on_pages_sql_dump(triple_counters, order)
     Utils.save_sql_dump(Config.processed_data_dir, 'templates_counter.sql', sql_dump)
 
 
@@ -59,6 +59,34 @@ def extract_infobox_properties():
                     OrderedDict(sorted(properties.items(), key=lambda item: item[1], reverse=True)), sort_keys=False)
 
 
+def aggregate_abstracts():
+    abstracts_with_templates_filename = join(Config.processed_data_dir, 'abstracts_with_templates.txt')
+    abstracts_without_templates_filename = join(Config.processed_data_dir, 'abstracts_without_templates.txt')
+    abstracts_with_templates_file = open(abstracts_with_templates_filename, 'w+', encoding='utf8')
+    abstracts_without_templates_file = open(abstracts_without_templates_filename, 'w+', encoding='utf8')
+    for path, subdirs, files in os.walk(Config.extracted_pages_with_infobox_dir):
+        for name in files:
+            if 'abstracts' in name:
+                name = name.replace('.json', '')
+                abstracts = Utils.load_json(path, name)
+                for page_name in abstracts:
+                    abstracts_with_templates_file.write(page_name+'\n')
+                    abstracts_with_templates_file.write(abstracts[page_name]+'\n\n')
+
+    for path, subdirs, files in os.walk(Config.extracted_pages_without_infobox_dir):
+        for name in files:
+            if 'abstracts' in name:
+                name = name.replace('.json', '')
+                abstracts = Utils.load_json(path, name)
+                for page_name in abstracts:
+                    abstracts_without_templates_file.write(page_name+'\n')
+                    abstracts_without_templates_file.write(abstracts[page_name]+'\n\n')
+
+    abstracts_with_templates_file.close()
+    abstracts_without_templates_file.close()
+
+
 if __name__ == '__main__':
-    count_number_of_infoboxes()
+    # count_number_of_infoboxes()
     # extract_infobox_properties()
+    aggregate_abstracts()

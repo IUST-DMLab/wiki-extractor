@@ -75,8 +75,8 @@ def get_infobox_lang(infobox_name):
         return None
 
 
-def get_wiki_article_in_template_statistic_sql_dump(rows, order):
-    table_name = 'wiki_article_in_template_statistic'
+def get_wiki_templates_transcluded_on_pages_sql_dump(rows, order):
+    table_name = 'wiki_templates_transcluded_on_pages'
     command = "INSERT INTO `%s` VALUES " % table_name
     for i, row in enumerate(rows):
         command += "('%s','%s','%s',%s)," % (row[order[0]].replace("'", "''"), row[order[1]].replace("'", "''"),
