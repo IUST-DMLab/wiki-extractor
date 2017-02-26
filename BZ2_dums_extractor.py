@@ -233,10 +233,10 @@ def extract_bz2_dump(filename):
                                 json_dict = dict()
                                 json_dict['template_name'] = infobox_name
                                 json_dict['type'] = infobox_type if infobox_type != 'NULL' else None
-                                json_dict['subject'] = 'fa.wikipedia.org/wiki/'+page_name.replace(' ', '_')
+                                json_dict['subject'] = 'http://fa.wikipedia.org/wiki/'+page_name.replace(' ', '_')
                                 json_dict['predicate'] = predicate
                                 json_dict['object'] = value
-                                json_dict['source'] = 'fa.wikipedia.org/wiki/'+page_name.replace(' ', '_')
+                                json_dict['source'] = 'http://fa.wikipedia.org/wiki/'+page_name.replace(' ', '_')
                                 json_dict['version'] = revision_ids[page_name]
                                 json.dump(json_dict, fp, ensure_ascii=False, indent=2, sort_keys=True)
                                 fp.write('\n,\n')

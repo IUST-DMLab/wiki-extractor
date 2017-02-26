@@ -86,7 +86,21 @@ def aggregate_abstracts():
     abstracts_without_templates_file.close()
 
 
+def count_triples():
+    all_counter = 0
+    triples_filenames = os.listdir(Config.extracted_infoboxes_dir)
+    for filename in triples_filenames:
+        with open(join(Config.extracted_infoboxes_dir, filename)) as fp:
+            for l in fp:
+                line = l.strip()
+                if line == ',':
+                    all_counter += 1
+
+    print(all_counter)
+
+
 if __name__ == '__main__':
     # count_number_of_infoboxes()
     # extract_infobox_properties()
-    aggregate_abstracts()
+    # aggregate_abstracts()
+    count_triples()

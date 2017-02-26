@@ -221,9 +221,9 @@ def detect_language(s):
 
 
 def get_fa_infoboxes_names():
-    fa_infobox_path = {}
+    fa_infobox_path = dict()
     for path in os.listdir(Config.extracted_pages_path_with_infobox_dir):
         with open(join(Config.extracted_pages_path_with_infobox_dir, path)) as f:
             data = json.load(f)
-            fa_infobox_path = {k: v for k, v in data.items() if k.startswith(tuple(Config.infobox_flags_fa))}
+            fa_infobox_path.update({k: v for k, v in data.items() if k.startswith(tuple(Config.infobox_flags_fa))})
     return fa_infobox_path
