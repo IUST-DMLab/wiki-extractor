@@ -2,7 +2,8 @@ import os
 from os.path import join
 import Utils
 import Config
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+from extract_infobax_mapping import sql_create_table_command
 
 
 def count_number_of_infoboxes():
@@ -122,9 +123,79 @@ def count_triples():
     print(all_counter)
 
 
+def template_redirect_with_fa():
+    redirects = Utils.load_json(Config.extracted_redirects_dir, Utils.get_redirects_filename('10'))
+    with_fa_redirects = defaultdict(list)
+
+    for redirect_from, redirect_to in redirects.items():
+        if Utils.is_ascii(redirect_from):
+            if Utils.without_en_chars(redirect_to):
+                with_fa_redirects[redirect_to].append(redirect_from)
+        elif Utils.without_en_chars(redirect_from):
+            if Utils.is_ascii(redirect_to):
+                with_fa_redirects[redirect_from].append(redirect_to)
+
+    Utils.save_json(Config.extracted_redirects_dir, '10-redirects-with-fa', with_fa_redirects)
+    fa_en_infobox_mapping_sql('wiki_template_mapping_from_redirects', with_fa_redirects)
+
+
+def fa_en_infobox_mapping_sql(table_name, rows):
+    table_structure = {
+        'id': 'int NOT NULL AUTO_INCREMENT',
+        'template_full_name_fa': 'varchar(1000)',
+        'template_full_name_en': 'varchar(1000)',
+        'template_name_fa': 'varchar(500)',
+        'template_name_en': 'varchar(500)',
+        'template_type_fa': 'varchar(500)',
+        'template_type_en': 'varchar(500)',
+    }
+    indexing = "PRIMARY KEY (`id`),\n"
+
+    key_order = ['id', 'template_full_name_fa', 'template_full_name_en', 'template_name_fa',
+                 'template_name_en', 'template_type_fa', 'template_type_en']
+
+    ordered_table_structure = OrderedDict(sorted(table_structure.items(), key=lambda i: key_order.index(i[0])))
+
+    command = sql_create_table_command(table_name, ordered_table_structure, indexing)
+
+    command += sql_insert_command(table_name, rows, key_order)
+    Utils.save_sql_dump(Config.processed_data_dir, table_name + '.sql', command)
+
+
+def sql_insert_command(table_name, rows, key_order):
+    values_name = '(`'+'`,`'.join(key_order[1:])+'`)'
+    command = "INSERT INTO `%s`%s VALUES " % (table_name, values_name)
+    for full_name_fa, infoboxes in rows.items():
+        for full_name_en in infoboxes:
+            type_fa, name_fa = Utils.find_get_infobox_name_type(full_name_fa)
+            type_en, name_en = Utils.find_get_infobox_name_type(full_name_en)
+
+            full_name_fa = full_name_fa.replace('_', ' ').replace("'", "''") if\
+                full_name_fa is not None else full_name_fa
+            full_name_en = full_name_en.replace('_', ' ').replace("'", "''") if\
+                full_name_en is not None else full_name_en
+            name_fa = name_fa.replace("'", "''") if name_fa is not None else full_name_fa
+            name_en = name_en.replace("'", "''") if name_en is not None else full_name_en
+            type_fa = type_fa.replace("'", "''") if type_fa is not None else 'NULL'
+            type_en = type_en.replace("'", "''") if type_en is not None else 'NULL'
+
+            command += "('%s','%s','%s','%s', '%s', '%s')," % (
+                full_name_fa,
+                full_name_en,
+                name_fa,
+                name_en,
+                type_fa,
+                type_en
+            )
+
+    command = command[:-1] + ";"
+    return command
+
+
 if __name__ == '__main__':
     # count_number_of_infoboxes()
     # extract_infobox_properties()
     # aggregate_abstracts()
     # count_triples()
-    aggregate_categories()
+    # aggregate_categories()
+    template_redirect_with_fa()

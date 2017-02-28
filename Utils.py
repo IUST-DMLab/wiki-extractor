@@ -2,6 +2,7 @@ import bz2
 import csv
 import gzip
 import json
+import string
 import logging
 import os
 from os.path import join, exists
@@ -230,4 +231,16 @@ def get_fa_infoboxes_names():
 
 
 def first_slash_splitter(name):
-    return name.strip().split('/',1)
+    return name.strip().split('/', 1)
+
+
+def is_ascii(sentence):
+    try:
+        sentence.encode('ascii')
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def without_en_chars(sentence):
+    return all(c not in string.ascii_letters for c in sentence)

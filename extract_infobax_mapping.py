@@ -99,8 +99,7 @@ def sql_insert_command(table_name, rows, key_order):
     return command
 
 
-def fa_en_infobox_mapping_sql():
-    table_name = 'wikipedia_extracted_template_mapping'
+def fa_en_infobox_mapping_sql(table_name, rows):
     table_structure = {
         'id': 'int NOT NULL AUTO_INCREMENT',
         'template_full_name_fa': 'varchar(1000)',
@@ -119,11 +118,11 @@ def fa_en_infobox_mapping_sql():
 
     command = sql_create_table_command(table_name, ordered_table_structure, indexing)
 
-    rows = Utils.load_json(Config.extracted_jsons, Config.extracted_infobox_mapping)
     command += sql_insert_command(table_name, rows, key_order)
     Utils.save_sql_dump(Config.processed_data_dir, table_name + '.sql', command)
 
 
 if __name__ == '__main__':
     # fa_en_infobox_mapping()
-    fa_en_infobox_mapping_sql()
+    fa_en_infobox_mapping_sql('wiki_extracted_template_mapping',
+                              Utils.load_json(Config.extracted_jsons, Config.extracted_infobox_mapping))
