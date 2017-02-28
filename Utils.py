@@ -227,3 +227,7 @@ def get_fa_infoboxes_names():
             data = json.load(f)
             fa_infobox_path.update({k: v for k, v in data.items() if k.startswith(tuple(Config.infobox_flags_fa))})
     return fa_infobox_path
+
+
+def first_slash_splitter(name):
+    return name.strip().split('/',1)

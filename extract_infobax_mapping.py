@@ -2,10 +2,11 @@ import os
 import json
 from os.path import join
 import wikitextparser as wtp
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import Utils
 import Config
+from Utils import first_slash_splitter
 from BZ2_dums_extractor import extract_wikipedia_bz2_dump
 
 
@@ -31,7 +32,13 @@ def extract_en_infobox(filename, fa_infoboxes, mapping):
     return mapping
 
 
-def main():
+def fa_en_infobox_mapping():
+    """
+    1. find pages in fa dump with fa_flag infoboxex
+    2. find en pages of step1 pages from langlink results
+    3. read en dump and extract template of pages in step2
+    """
+
     fa_infoboxes = Utils.get_fa_infoboxes_names()
 
     with open(Utils.get_information_filename(Config.extracted_jsons, Config.extracted_en_lang_link_file_name)) as f:
@@ -58,5 +65,65 @@ def main():
     Utils.save_json(Config.extracted_jsons, Config.extracted_infobox_mapping, mapping_result)
 
 
+def sql_create_table_command(table_name, columns, index):
+
+    command = "DROP TABLE IF EXISTS `%s`;\n" % table_name
+    command += "CREATE TABLE `%s` (\n " % table_name
+
+    for key, value in columns.items():
+        command += "`%s` %s,\n" % (key, value)
+
+    command += index
+    command = command[:-2] + ')CHARSET=utf8;\n'
+    return command
+
+
+def sql_insert_command(table_name, rows, key_order):
+    values_name = '(`'+'`,`'.join(key_order[1:])+'`)'
+    command = "INSERT INTO `%s`%s VALUES " % (table_name, values_name)
+    for full_name_fa, infoboxes in rows.items():
+        for full_name_en in infoboxes:
+            type_fa, name_fa = first_slash_splitter(full_name_fa)
+            type_en, name_en = first_slash_splitter(full_name_en)
+
+            command += "('%s','%s','%s','%s', '%s', '%s')," % (
+                full_name_fa.replace('/', ' ', 1).replace("'", "''"),
+                full_name_en.replace('/', ' ', 1).replace("'", "''"),
+                name_fa.replace("'", "''"),
+                name_en.replace("'", "''"),
+                type_fa.replace("'", "''"),
+                type_en.replace("'", "''"),
+            )
+
+    command = command[:-1] + ";"
+    return command
+
+
+def fa_en_infobox_mapping_sql():
+    table_name = 'wikipedia_extracted_template_mapping'
+    table_structure = {
+        'id': 'int NOT NULL AUTO_INCREMENT',
+        'template_full_name_fa': 'varchar(1000)',
+        'template_full_name_en': 'varchar(1000)',
+        'template_name_fa': 'varchar(500)',
+        'template_name_en': 'varchar(500)',
+        'template_type_fa': 'varchar(500)',
+        'template_type_en': 'varchar(500)',
+    }
+    indexing = "PRIMARY KEY (`id`),\n"
+
+    key_order = ['id', 'template_full_name_fa', 'template_full_name_en', 'template_name_fa',
+                 'template_name_en', 'template_type_fa', 'template_type_en']
+
+    ordered_table_structure = OrderedDict(sorted(table_structure.items(), key=lambda i: key_order.index(i[0])))
+
+    command = sql_create_table_command(table_name, ordered_table_structure, indexing)
+
+    rows = Utils.load_json(Config.extracted_jsons, Config.extracted_infobox_mapping)
+    command += sql_insert_command(table_name, rows, key_order)
+    Utils.save_sql_dump(Config.processed_data_dir, table_name + '.sql', command)
+
+
 if __name__ == '__main__':
-    main()
+    # fa_en_infobox_mapping()
+    fa_en_infobox_mapping_sql()
