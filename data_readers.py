@@ -86,6 +86,29 @@ def aggregate_abstracts():
     abstracts_without_templates_file.close()
 
 
+def aggregate_categories():
+    categories_with_templates = dict()
+    categories_without_templates = dict()
+    for path, subdirs, files in os.walk(Config.extracted_pages_with_infobox_dir):
+        for name in files:
+            if 'categories' in name:
+                name = name.replace('.json', '')
+                categories = Utils.load_json(path, name)
+                for page_name in categories:
+                    categories_with_templates[page_name] = categories[page_name]
+
+    for path, subdirs, files in os.walk(Config.extracted_pages_without_infobox_dir):
+        for name in files:
+            if 'categories' in name:
+                name = name.replace('.json', '')
+                categories = Utils.load_json(path, name)
+                for page_name in categories:
+                    categories_without_templates[page_name] = categories[page_name]
+
+    Utils.save_json(Config.processed_data_dir, 'categories_with_templates', categories_with_templates)
+    Utils.save_json(Config.processed_data_dir, 'categories_without_templates', categories_without_templates)
+
+
 def count_triples():
     all_counter = 0
     triples_filenames = os.listdir(Config.extracted_infoboxes_dir)
@@ -103,4 +126,5 @@ if __name__ == '__main__':
     # count_number_of_infoboxes()
     # extract_infobox_properties()
     # aggregate_abstracts()
-    count_triples()
+    # count_triples()
+    aggregate_categories()
