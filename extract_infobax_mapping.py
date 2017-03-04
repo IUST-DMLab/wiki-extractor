@@ -40,9 +40,11 @@ def fa_en_infobox_mapping():
     """
 
     fa_infoboxes = Utils.get_fa_infoboxes_names()
+    len_fa_infoboxes = len(fa_infoboxes)
 
     with open(Utils.get_information_filename(Config.extracted_jsons, Config.extracted_en_lang_link_file_name)) as f:
         en_lang_link = json.load(f)
+    len_en_lang_link = len(en_lang_link)
 
     en_titles = defaultdict(list)
     for path, names in fa_infoboxes.items():
@@ -51,6 +53,7 @@ def fa_en_infobox_mapping():
                 en_titles[en_lang_link[name]].append(path)
             except KeyError:
                 continue
+    len_en_titles = len(en_titles)
 
     del en_lang_link
 
@@ -63,6 +66,9 @@ def fa_en_infobox_mapping():
         extract_en_infobox(page, en_titles, mapping_result)
 
     Utils.save_json(Config.extracted_jsons, Config.extracted_infobox_mapping, mapping_result)
+    with open(os.path.join(Config.extracted_jsons, 'statistics'), 'w') as f:
+        f.write('fa_infoboxes: %s \n lang_link: %s  \n en_titles: %s'
+                % (len_fa_infoboxes, len_en_lang_link, len_en_titles))
 
 
 def sql_create_table_command(table_name, columns, index):
@@ -123,6 +129,6 @@ def fa_en_infobox_mapping_sql(table_name, rows):
 
 
 if __name__ == '__main__':
-    # fa_en_infobox_mapping()
-    fa_en_infobox_mapping_sql('wiki_extracted_template_mapping',
-                              Utils.load_json(Config.extracted_jsons, Config.extracted_infobox_mapping))
+    fa_en_infobox_mapping()
+    # fa_en_infobox_mapping_sql('wiki_extracted_template_mapping',
+    #                           Utils.load_json(Config.extracted_jsons, Config.extracted_infobox_mapping))

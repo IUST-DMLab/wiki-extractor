@@ -226,7 +226,13 @@ def get_fa_infoboxes_names():
     for path in os.listdir(Config.extracted_pages_path_with_infobox_dir):
         with open(join(Config.extracted_pages_path_with_infobox_dir, path)) as f:
             data = json.load(f)
-            fa_infobox_path.update({k: v for k, v in data.items() if k.startswith(tuple(Config.infobox_flags_fa))})
+            for infobox, fa_wiki_pages in data.items():
+                if infobox.startswith(tuple(Config.infobox_flags_fa)):
+                    if infobox in fa_infobox_path.keys():
+                        fa_infobox_path[infobox].extend(fa_wiki_pages)
+                    else:
+                        fa_infobox_path[infobox] = fa_wiki_pages
+
     return fa_infobox_path
 
 
