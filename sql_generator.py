@@ -19,7 +19,12 @@ class ConnectionString:
     use_unicode = True
     charset = "utf8"
 
-# general mysql
+
+class SqlForeignKeyStructure(object):
+    def __init__(self, column, reference_table, reference_column):
+        self.column = column
+        self.reference_table = reference_table
+        self.reference_column = reference_column
 
 
 def db_connection():
@@ -37,7 +42,15 @@ def db_connection():
         return None
 
 
-def sql_create_table_command(table_name, columns, primary_key=None, foreign_key=None, unique_key=None):
+def sql_create_table_command_generator(table_name, columns, primary_key=None, foreign_key=None, unique_key=None):
+    """
+    :param table_name:
+    :param columns:
+    :param primary_key: list of primary keys [key1, key2, ...]
+    :param foreign_key: list of dict [{'column':'col_name','reference_table':'table_name', 'reference_column':'col_name'},{}]
+    :param unique_key: defaultdict(list) {unique_name1: [col1, col2], unique_name2:[col1, col4]}
+    :return:
+    """
 
     command = "DROP TABLE IF EXISTS `%s`;\n" % table_name
     command += "CREATE TABLE `%s` (\n " % table_name
@@ -47,19 +60,20 @@ def sql_create_table_command(table_name, columns, primary_key=None, foreign_key=
     if primary_key:
         command += "PRIMARY KEY("
         for p_key in primary_key:
-            command += "`%s`" %p_key
-        command += ")\n"
+            command += "`%s`," %p_key
+        command = command[:-1] + "),\n"
 
     if foreign_key:
         for f_key in foreign_key:
-            command += "FOREIGN KEY (%s) REFERENCE %s(%s),\n" %
+            command += "FOREIGN KEY (%s) REFERENCE %s(%s),\n" % (f_key.column, f_key.reference_table,
+                                                                 f_key.reference_column)
+    if unique_key:
+        for u_key_name, u_key_values in unique_key.items():
+            command += "UNIQUE KEY `%s` ("
+            for val in u_key_values:
+                command += '`%s`,' %val
+            command = command[:-1] + "),\n"
 
-    # if unique_key:
-    #     for u_key in unique_key:
-
-
-
-    command += index
     command = command[:-2] + ')CHARSET=utf8;\n'
     return command
 
@@ -90,26 +104,23 @@ def insert_command(table_name, insert_dictionary_columns, rows):
 
 
 def execute_command_mysql(command, message):
-    try:
-        conn = pymysql.connect(host=ConnectionString.host, port=ConnectionString.port, user=ConnectionString.user,
-                               passwd=ConnectionString.passwd,
-                               db=ConnectionString.db, use_unicode=ConnectionString.use_unicode,
-                               charset=ConnectionString.charset)
-        cur = conn.cursor()
-        cur.execute(command)
-        conn.commit()
+    conn = db_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute(command)
+            conn.commit()
 
-    except Exception as e:
-        print('Some Exception Occur ' + str(e))
-        if not message:
-            print('\n ' + message)
-    finally:
-        conn.close()
+        except Exception as e:
+            print('Some Exception Occur ' + str(e))
+            if message:
+                print('\n ' + message)
+        finally:
+            conn.close()
 
 
-def create_import_file(command, dir_path, file_name):
-
-    file_path = dir_path = join(dir_path, file_name + '.sql')
+def create_sql_dump(command, dir_path, file_name):
+    file_path = join(dir_path, file_name + '.sql')
     with open(file_path, 'a') as f:
         f.write(command)
 
@@ -148,3 +159,24 @@ def select_result_mysql(command):
     finally:
         conn.close()
 
+
+def test():
+    key_order = ['id', 'template_name_fa', 'template_name_en', 'approved', 'col1', 'col2', 'col3']
+    table_structure = {
+        'id': 'int NOT NULL AUTO_INCREMENT',
+        'template_name_fa': 'varchar(500)',
+        'template_name_en': 'varchar(500)',
+        'approved': 'tinyint default NULL',
+        'col1': 'int',
+        'col2': 'int',
+        'col3': 'int'
+    }
+    table_name = 'test'
+    primary_keys = ['id', 'col1']
+    foreign_keys = [SqlForeignKeyStructure('col2', 'test2', 'id2'), SqlForeignKeyStructure('col3', 'test3', 'id3')]
+    unique_keys = {'col1_uniq': ['col1', 'col2'], 'col3_uniq': ['col2', 'col3']}
+    print(sql_create_table_command_generator(table_name, table_structure, primary_keys, foreign_keys, unique_keys))
+
+
+if __name__ == '__main__':
+    test()
