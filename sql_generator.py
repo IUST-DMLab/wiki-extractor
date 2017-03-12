@@ -37,13 +37,27 @@ def db_connection():
         return None
 
 
-def sql_create_table_command(table_name, columns, index):
+def sql_create_table_command(table_name, columns, primary_key=None, foreign_key=None, unique_key=None):
 
     command = "DROP TABLE IF EXISTS `%s`;\n" % table_name
     command += "CREATE TABLE `%s` (\n " % table_name
 
     for key, value in columns.items():
         command += "`%s` %s,\n" % (key, value)
+    if primary_key:
+        command += "PRIMARY KEY("
+        for p_key in primary_key:
+            command += "`%s`" %p_key
+        command += ")\n"
+
+    if foreign_key:
+        for f_key in foreign_key:
+            command += "FOREIGN KEY (%s) REFERENCE %s(%s),\n" %
+
+    # if unique_key:
+    #     for u_key in unique_key:
+
+
 
     command += index
     command = command[:-2] + ')CHARSET=utf8;\n'

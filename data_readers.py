@@ -120,3 +120,114 @@ def sql_insert_command(table_name, rows, key_order):
 
     command = command[:-1] + ";"
     return command
+
+import pymysql
+MYSQL_HOST = 'localhost'
+MYSQL_USER = 'root'
+MYSQL_PASS = ''
+MYSQL_DB = 'kg'
+
+
+def sql_new_insert_command(table_name, rows, key_order):
+    values_name = '(`'+'`,`'.join(key_order[1:])+'`)'
+    command = "INSERT INTO `%s`%s VALUES " % (table_name, values_name)
+    for redirect_from, redirects in rows.items():
+        for redirect_to in redirects:
+            template_name_fa = redirect_from.replace('_', ' ').replace("'", "''")
+            template_name_en = redirect_to.replace('_', ' ').replace("'", "''")
+
+            command += "('%s','%s')," % (
+                template_name_fa,
+                template_name_en,
+            )
+    command = command[:-1] + ";"
+    return command
+
+
+def db_connection():
+    try:
+        connection = pymysql.connect(host=MYSQL_HOST,
+                                     user=MYSQL_USER,
+                                     password=MYSQL_PASS,
+                                     db=MYSQL_DB,
+                                     charset='utf8',
+                                     )
+        return connection
+    except Exception as e:
+        return None
+
+from datetime import datetime
+def wiki_template_mapping_sql_generator():
+    time = datetime.now()
+
+    table_name = 'wiki_template_mapping'
+    table_structure = {
+        'id': 'int NOT NULL AUTO_INCREMENT',
+        'template_name_fa': 'varchar(500)',
+        'template_name_en': 'varchar(500)',
+        'approved': 'tinyint default NULL',
+    }
+    indexing = "PRIMARY KEY (`id`),\n" \
+               "UNIQUE KEY (`template_name_fa`, `template_name_en`),\n"
+
+    key_order = ['id', 'template_name_fa','template_name_en', 'approved']
+
+    ordered_table_structure = OrderedDict(sorted(table_structure.items(), key=lambda i: key_order.index(i[0])))
+
+    command = sql_create_table_command(table_name, ordered_table_structure, indexing)
+    sql_command_executor(command)
+
+    redirect_data = Utils.load_json('/home/nasim/Projects/kg/wiki-extractor/resources/extracted/jsons/redirects', '10-redirects-with-fa')
+    mapping_data = Utils.load_json('/home/nasim/Projects/kg/wiki-extractor/resources/extracted/jsons', 'mappings_v4.1')
+
+    print("________________redirects______________")
+    for redirect_from , redirects in redirect_data.items():
+        for redirect_to in redirects:
+            query = sql_one_insert_command(table_name, key_order[1:3], redirect_from, redirect_to)
+            sql_command_executor(query)
+            command += query + '\n'
+
+    print("________________mapping______________")
+    for fa_infobox, en_infoboxes in mapping_data.items():
+
+        for en_infobox in en_infoboxes:
+            query = sql_one_insert_command(table_name, key_order[1:3], fa_infobox, en_infobox)
+            sql_command_executor(query)
+            command += query + '\n'
+
+
+    Utils.save_sql_dump('/home/nasim/Projects/kg/wiki-extractor/resources/processed_data', table_name + '.sql', command)
+    print("\n\n")
+    print(datetime.now() - time)
+
+
+def sql_command_executor(query):
+    connection = db_connection()
+    if connection:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                connection.commit()
+        except Exception as e:
+            print(e)
+
+        finally:
+            connection.close()
+
+
+def sql_one_insert_command(table_name, key_order, template_name_fa, template_name_en):
+    values_name = '(`'+'`,`'.join(key_order)+'`)'
+    command = "INSERT INTO `%s`%s VALUES " % (table_name, values_name)
+    template_name_fa = template_name_fa.replace('_', ' ').replace("'", "''")
+    template_name_en = template_name_en.replace('_', ' ').replace("'", "''")
+
+    command += "('%s','%s')," % (
+        template_name_fa,
+        template_name_en,
+    )
+    command = command[:-1] + ";"
+    return command
+
+
+if __name__ == '__main__':
+    wiki_template_mapping_sql_generator()
