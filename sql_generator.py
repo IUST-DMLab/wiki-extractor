@@ -3,23 +3,53 @@ from os.path import join, exists
 
 
 class ConnectionString:
-    host = '194.225.227.161'
-    port = 3306
-    user = 'leila_oskouie'
-    passwd = '123456'
-    db = 'knowledge_graph'
-    use_unicode = True
-    charset = "utf8"
-
-    # host = '127.0.0.1'
+    # host = '194.225.227.161'
     # port = 3306
-    # user = 'root'
-    # passwd = '12345'
-    # db = 'test2'
+    # user = 'leila_oskouie'
+    # password = '123456'
+    # db = 'knowledge_graph'
     # use_unicode = True
     # charset = "utf8"
 
+    host = 'localhost'
+    port = 3306
+    user = 'root'
+    password = ''
+    db = 'kg'
+    use_unicode = True
+    charset = "utf8"
+
 # general mysql
+
+
+def db_connection():
+    try:
+        connection = pymysql.connect(host=ConnectionString.host,
+                                     port=ConnectionString.port,
+                                     user=ConnectionString.user,
+                                     password=ConnectionString.password,
+                                     db=ConnectionString.db,
+                                     use_unicode=ConnectionString.use_unicode,
+                                     charset=ConnectionString.charset,
+                                     )
+        return connection
+    except Exception as e:
+        return None
+
+
+def sql_create_table_command(table_name, columns, index):
+
+    command = "DROP TABLE IF EXISTS `%s`;\n" % table_name
+    command += "CREATE TABLE `%s` (\n " % table_name
+
+    for key, value in columns.items():
+        command += "`%s` %s,\n" % (key, value)
+
+    command += index
+    command = command[:-2] + ')CHARSET=utf8;\n'
+    return command
+
+
 def insert_command(table_name, insert_dictionary_columns, rows):
 
     columns = ""
@@ -103,3 +133,4 @@ def select_result_mysql(command):
         print('some exception occur ' + str(e))
     finally:
         conn.close()
+
