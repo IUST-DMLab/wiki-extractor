@@ -1,9 +1,8 @@
-import os
-from bs4 import BeautifulSoup
 import json
+import os
 from collections import OrderedDict
+
 import Config
-import Utils
 
 
 def json_to_row():
@@ -49,7 +48,7 @@ def get_file_list_from_dir(dir_name):
 
 
 def create_table_mysql_template():
-    dir_path = Config.extracted_infoboxes_dir
+    dir_path = Config.final_tuples_dir
     main_list = get_file_list_from_dir(dir_path)
 
     table_structure = OrderedDict([('id', 'int(10) NOT NULL AUTO_INCREMENT'), ('template_name', 'varchar(250)'),
@@ -129,5 +128,4 @@ def insert_command_template(table_name, rows, insert_columns):
 
 
 if __name__ == '__main__':
-
     create_table_mysql_template()

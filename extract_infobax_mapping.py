@@ -1,34 +1,31 @@
 import os
-import json
 from os.path import join
 import wikitextparser as wtp
 from collections import defaultdict, OrderedDict
 
 import Utils
 import Config
-from Utils import first_slash_splitter
-from BZ2_dums_extractor import extract_wikipedia_bz2_dump
+from extractors import extract_bz2_dump
+from joblib import Parallel, delayed
 
 
-def extract_en_infobox(filename, fa_infoboxes, mapping):
+def extract_en_infobox(filename, fa_infoboxes_per_en_pages):
+    input_filename = join(Config.extracted_en_pages_articles_dir, filename)
 
-    input_filename = join(Config.en_extracted_pages_articles_dir, filename)
-
+    mapping = defaultdict(list)
     for page in Utils.get_wikipedia_pages(filename=input_filename):
         parsed_page = Utils.parse_page(page)
-
-        if parsed_page.title.text in fa_infoboxes.keys():
+        if parsed_page.title.text in fa_infoboxes_per_en_pages.keys():
             text = parsed_page.revision.find('text').text
             wiki_text = wtp.parse(text)
 
             templates = wiki_text.templates
             for template in templates:
-                infobox_name, infobox_type = Utils.find_get_infobox_name_type(template.name)
-                if infobox_name and infobox_type:
-                    for path in fa_infoboxes[parsed_page.title.text]:
-                        en_mapping = infobox_name + '/' + infobox_type
-                        if en_mapping not in mapping[path]:
-                            mapping[path].append(en_mapping)
+                infobox_name, is_infobox = Utils.get_infobox_name_type(template.name)
+                if is_infobox:
+                    for fa_infobox in fa_infoboxes_per_en_pages[parsed_page.title.text]:
+                        if infobox_name not in mapping[fa_infobox]:
+                            mapping[fa_infobox].append(infobox_name)
     return mapping
 
 
@@ -39,30 +36,35 @@ def fa_en_infobox_mapping():
     3. read en dump and extract template of pages in step2
     """
 
-    fa_infoboxes = Utils.get_fa_infoboxes_names()
+    en_lang_link = Utils.load_json(Config.extracted_lang_links_dir, Config.extracted_en_lang_link_filename)
 
-    with open(Utils.get_information_filename(Config.extracted_jsons, Config.extracted_en_lang_link_file_name)) as f:
-        en_lang_link = json.load(f)
+    fa_infoboxes_per_pages = Utils.get_fa_infoboxes_per_pages()
+    fa_infoboxes_per_en_pages = defaultdict(list)
 
-    en_titles = defaultdict(list)
-    for path, names in fa_infoboxes.items():
-        for name in names:
-            try:
-                en_titles[en_lang_link[name]].append(path)
-            except KeyError:
-                continue
+    for fa_name, infoboxes in fa_infoboxes_per_pages.items():
+        try:
+            fa_infoboxes_per_en_pages[en_lang_link[fa_name.replace(' ', '_')]].extend(infoboxes)
+        except KeyError:
+            continue
 
     del en_lang_link
+    del fa_infoboxes_per_pages
 
-    extract_wikipedia_bz2_dump(Config.enwiki_latest_pages_articles_dump, Config.en_extracted_pages_articles_dir)
+    extract_bz2_dump(Config.enwiki_latest_pages_articles_dump, Config.extracted_en_pages_articles_dir)
 
-    extracted_en_pages_files = os.listdir(Config.en_extracted_pages_articles_dir)
+    extracted_en_pages_files = os.listdir(Config.extracted_en_pages_articles_dir)
 
-    mapping_result = defaultdict(list)
-    for page in extracted_en_pages_files:
-        extract_en_infobox(page, en_titles, mapping_result)
+    if extracted_en_pages_files:
+        mapping_list = Parallel(n_jobs=-1)(delayed(extract_en_infobox)(filename, fa_infoboxes_per_en_pages)
+                                           for filename in extracted_en_pages_files)
 
-    Utils.save_json(Config.extracted_jsons, Config.extracted_infobox_mapping, mapping_result)
+        mapping_result = defaultdict(list)
+        for mapping in mapping_list:
+            for fa_infobox_name in mapping:
+                for en_infobox_name in mapping[fa_infobox_name]:
+                    if en_infobox_name not in mapping_result[fa_infobox_name]:
+                        mapping_result[fa_infobox_name].append(en_infobox_name)
+        Utils.save_json(Config.extracted_infobox_mapping_dir, Config.extracted_infobox_mapping_filename, mapping_result)
 
 
 def sql_create_table_command(table_name, columns, index):
@@ -81,16 +83,15 @@ def sql_create_table_command(table_name, columns, index):
 def sql_insert_command(table_name, rows, key_order):
     values_name = '(`'+'`,`'.join(key_order[1:])+'`)'
     command = "INSERT INTO `%s`%s VALUES " % (table_name, values_name)
-    for full_name_fa, infoboxes in rows.items():
-        for full_name_en in infoboxes:
-            type_fa, name_fa = first_slash_splitter(full_name_fa)
-            type_en, name_en = first_slash_splitter(full_name_en)
+    for fa_infobox, en_infoboxes in rows.items():
+        full_name_fa, type_fa = Utils.get_infobox_name_type(fa_infobox)
 
-            command += "('%s','%s','%s','%s', '%s', '%s')," % (
+        for en_infobox in en_infoboxes:
+            full_name_en, type_en = Utils.get_infobox_name_type(en_infobox)
+
+            command += "('%s','%s','%s','%s')," % (
                 full_name_fa.replace('/', ' ', 1).replace("'", "''"),
                 full_name_en.replace('/', ' ', 1).replace("'", "''"),
-                name_fa.replace("'", "''"),
-                name_en.replace("'", "''"),
                 type_fa.replace("'", "''"),
                 type_en.replace("'", "''"),
             )
@@ -104,25 +105,23 @@ def fa_en_infobox_mapping_sql(table_name, rows):
         'id': 'int NOT NULL AUTO_INCREMENT',
         'template_full_name_fa': 'varchar(1000)',
         'template_full_name_en': 'varchar(1000)',
-        'template_name_fa': 'varchar(500)',
-        'template_name_en': 'varchar(500)',
         'template_type_fa': 'varchar(500)',
         'template_type_en': 'varchar(500)',
     }
     indexing = "PRIMARY KEY (`id`),\n"
 
-    key_order = ['id', 'template_full_name_fa', 'template_full_name_en', 'template_name_fa',
-                 'template_name_en', 'template_type_fa', 'template_type_en']
+    key_order = ['id', 'template_full_name_fa', 'template_full_name_en', 'template_type_fa', 'template_type_en']
 
     ordered_table_structure = OrderedDict(sorted(table_structure.items(), key=lambda i: key_order.index(i[0])))
 
     command = sql_create_table_command(table_name, ordered_table_structure, indexing)
 
     command += sql_insert_command(table_name, rows, key_order)
-    Utils.save_sql_dump(Config.processed_data_dir, table_name + '.sql', command)
+    Utils.save_sql_dump(Config.refined_dir, table_name + '.sql', command)
 
 
 if __name__ == '__main__':
     fa_en_infobox_mapping()
-    # fa_en_infobox_mapping_sql('wiki_extracted_template_mapping',
-    #                           Utils.load_json(Config.extracted_jsons, Config.extracted_infobox_mapping))
+    fa_en_infobox_mapping_sql('wiki_template_mapping_extracted',
+                              Utils.load_json(Config.extracted_infobox_mapping_dir,
+                                              Config.extracted_infobox_mapping_filename))

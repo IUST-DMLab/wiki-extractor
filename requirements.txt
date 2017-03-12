@@ -1,3 +1,4 @@
 joblib
 wikitextparser
 bs4
+alphabet_detector

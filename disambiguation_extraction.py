@@ -58,9 +58,9 @@ def get_disambiguation_links_regular(content, exception_list):
 
 
 def extract_disambiguation(filename):
-    disambiguation_filename = Utils.get_information_filename(Config.extracted_disambiguation_dir, filename)
+    disambiguation_filename = Utils.get_json_filename(Config.extracted_disambiguation_dir, filename)
 
-    input_filename = Config.fawiki_latest_pages_meta_current_dump
+    input_filename = Config.fawiki_latest_pages_articles_dump
     wikipedia_pages = get_wikipedia_pages(input_filename)
 
     json_list = []
@@ -165,7 +165,7 @@ def check_image(my_dict, image_names, page_n):
 
 def get_attribute_name(filename, attribute_type):
 
-    dir_path = Config.extracted_infoboxes_dir
+    dir_path = Config.extracted_tuples_dir
     main_list = get_file_list_from_dir(dir_path)
 
     attribute_names = {}
@@ -193,7 +193,7 @@ def get_image_name(filename):
 
     att_name = get_attribute_name(filename, 'image')
 
-    image_filename = Utils.get_information_filename(Config.extracted_disambiguation_dir, filename)
+    image_filename = Utils.get_json_filename(Config.extracted_disambiguation_dir, filename)
     image_name_file = open(image_filename, 'a+', encoding='utf8')
     sorted_image_names = sorted(att_name.items(), key=operator.itemgetter(1), reverse=True)
     image_name_file.write(json.dumps(sorted_image_names, ensure_ascii=False, indent=2, sort_keys=True))
@@ -205,7 +205,7 @@ def get_path_name(filename):
 
     att_name = get_attribute_name(filename, 'path')
 
-    path_filename = Utils.get_information_filename(Config.extracted_disambiguation_dir, filename)
+    path_filename = Utils.get_json_filename(Config.extracted_disambiguation_dir, filename)
     path_name_file = open(path_filename, 'a+', encoding='utf8')
 
     sorted_path_names = sorted(att_name.items(), key=lambda i: i[1][0], reverse=True)
@@ -216,7 +216,7 @@ def get_path_name(filename):
 
 def extract_template(filename):
 
-    input_filename = Config.fawiki_latest_pages_meta_current_dump
+    input_filename = Config.fawiki_latest_pages_articles_dump
     wikipedia_pages = get_wikipedia_pages(input_filename)
 
     count = 0
