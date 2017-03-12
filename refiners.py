@@ -43,16 +43,17 @@ def build_infobox_tuples():
             template_name, infobox_type = Utils.get_infobox_name_type(infobox_name)
             for page_name in infoboxes[infobox_name]:
                 for infobox in infoboxes[infobox_name][page_name]:
-                    for predicate, value in infobox.items():
-                        json_dict = dict()
-                        json_dict['template_name'] = infobox_name
-                        json_dict['template_type'] = infobox_type
-                        json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
-                        json_dict['predicate'] = predicate
-                        json_dict['object'] = value
-                        json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
-                        json_dict['version'] = revision_ids[page_name]
-                        tuples.append(json_dict)
+                    for predicate, values in infobox.items():
+                        for value in values:
+                            json_dict = dict()
+                            json_dict['template_name'] = infobox_name
+                            json_dict['template_type'] = infobox_type
+                            json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                            json_dict['predicate'] = predicate
+                            json_dict['object'] = value
+                            json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                            json_dict['version'] = revision_ids[page_name]
+                            tuples.append(json_dict)
         Utils.save_json(Config.final_tuples_dir, infobox_filename, tuples)
 
 
