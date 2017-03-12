@@ -69,9 +69,9 @@ def sql_create_table_command_generator(table_name, columns, primary_key=None, fo
                                                                  f_key.reference_column)
     if unique_key:
         for u_key_name, u_key_values in unique_key.items():
-            command += "UNIQUE KEY `%s` ("
+            command += "UNIQUE KEY `%s` (" % u_key_name
             for val in u_key_values:
-                command += '`%s`,' %val
+                command += '`%s`,' % val
             command = command[:-1] + "),\n"
 
     command = command[:-2] + ')CHARSET=utf8;\n'
