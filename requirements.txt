@@ -2,3 +2,4 @@ joblib
 wikitextparser
 bs4
 alphabet_detector
+PyMySQL==0.7.9

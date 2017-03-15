@@ -1,12 +1,13 @@
 import os
 from os.path import join
+from collections import defaultdict
+
 import wikitextparser as wtp
-from collections import defaultdict, OrderedDict
+from joblib import Parallel, delayed
 
 import Utils
 import Config
 from extractors import extract_bz2_dump
-from joblib import Parallel, delayed
 
 
 def extract_en_infobox(filename, fa_infoboxes_per_en_pages):
@@ -67,61 +68,5 @@ def fa_en_infobox_mapping():
         Utils.save_json(Config.extracted_infobox_mapping_dir, Config.extracted_infobox_mapping_filename, mapping_result)
 
 
-def sql_create_table_command(table_name, columns, index):
-
-    command = "DROP TABLE IF EXISTS `%s`;\n" % table_name
-    command += "CREATE TABLE `%s` (\n " % table_name
-
-    for key, value in columns.items():
-        command += "`%s` %s,\n" % (key, value)
-
-    command += index
-    command = command[:-2] + ')CHARSET=utf8;\n'
-    return command
-
-
-def sql_insert_command(table_name, rows, key_order):
-    values_name = '(`'+'`,`'.join(key_order[1:])+'`)'
-    command = "INSERT INTO `%s`%s VALUES " % (table_name, values_name)
-    for fa_infobox, en_infoboxes in rows.items():
-        full_name_fa, type_fa = Utils.get_infobox_name_type(fa_infobox)
-
-        for en_infobox in en_infoboxes:
-            full_name_en, type_en = Utils.get_infobox_name_type(en_infobox)
-
-            command += "('%s','%s','%s','%s')," % (
-                full_name_fa.replace('/', ' ', 1).replace("'", "''"),
-                full_name_en.replace('/', ' ', 1).replace("'", "''"),
-                type_fa.replace("'", "''"),
-                type_en.replace("'", "''"),
-            )
-
-    command = command[:-1] + ";"
-    return command
-
-
-def fa_en_infobox_mapping_sql(table_name, rows):
-    table_structure = {
-        'id': 'int NOT NULL AUTO_INCREMENT',
-        'template_full_name_fa': 'varchar(1000)',
-        'template_full_name_en': 'varchar(1000)',
-        'template_type_fa': 'varchar(500)',
-        'template_type_en': 'varchar(500)',
-    }
-    indexing = "PRIMARY KEY (`id`),\n"
-
-    key_order = ['id', 'template_full_name_fa', 'template_full_name_en', 'template_type_fa', 'template_type_en']
-
-    ordered_table_structure = OrderedDict(sorted(table_structure.items(), key=lambda i: key_order.index(i[0])))
-
-    command = sql_create_table_command(table_name, ordered_table_structure, indexing)
-
-    command += sql_insert_command(table_name, rows, key_order)
-    Utils.save_sql_dump(Config.refined_dir, table_name + '.sql', command)
-
-
 if __name__ == '__main__':
     fa_en_infobox_mapping()
-    fa_en_infobox_mapping_sql('wiki_template_mapping_extracted',
-                              Utils.load_json(Config.extracted_infobox_mapping_dir,
-                                              Config.extracted_infobox_mapping_filename))
