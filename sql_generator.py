@@ -3,6 +3,7 @@ from os.path import join, exists
 
 
 class ConnectionString:
+
     # host = '194.225.227.161'
     # port = 3306
     # user = 'leila_oskouie'
@@ -11,11 +12,11 @@ class ConnectionString:
     # use_unicode = True
     # charset = "utf8"
 
-    host = 'localhost'
+    host = '127.0.0.1'
     port = 3306
     user = 'root'
-    password = ''
-    db = 'kg'
+    password = '12345'
+    db = 'test2'
     use_unicode = True
     charset = "utf8"
 
@@ -78,7 +79,7 @@ def sql_create_table_command_generator(table_name, columns, primary_key=None, fo
     return command
 
 
-def insert_command(table_name, insert_dictionary_columns, rows):
+def insert_command(table_structure, table_name, insert_dictionary_columns, rows):
 
     columns = ""
     for name in insert_dictionary_columns:
@@ -91,9 +92,9 @@ def insert_command(table_name, insert_dictionary_columns, rows):
         command += "( "
 
         for column_name in insert_dictionary_columns:
-            if insert_dictionary_columns[column_name] == 'varchar':
-                command += " '%s', " % records[column_name]
-            elif insert_dictionary_columns[column_name] == 'int':
+            if 'varchar' in table_structure[column_name]:
+                command += " '%s', " % records[column_name].replace("'", "''").replace("\\", "\\\\")
+            elif 'int' in table_structure[column_name]:
                 command += " %s, " % records[column_name]
 
         command = command[:-2] + '),'
