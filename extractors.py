@@ -124,7 +124,20 @@ def extract_bz2_dump_information(directory, filename,
                     infobox = dict()
                     for param in template.arguments:
                         param_name = clean(str(param.name))
-                        param_value = clean(str(param.value))
+                        param_value = str(param.value).replace('{{سخ}}', '،').replace('{{-}}', '،')
+                        param_value = param_value.replace('<br>', '،').replace('*', '،')
+                        param_value = clean(param_value)
+                        param_value = re.sub(r"\s+", ' ', param_value)
+                        param_value = param_value.replace(' ، ', '،')
+                        only_wiki_links = re.findall(r"http://fa.wikipedia.org/wiki/\S+", param_value)
+                        if ' '.join(only_wiki_links) == param_value:
+                            param_value = param_value.replace(' ', '،')
+                        if ' و '.join(only_wiki_links) == param_value:
+                            param_value = param_value.replace(' و ', '،')
+                        if ' - '.join(only_wiki_links) == param_value:
+                            param_value = param_value.replace(' - ', '،')
+                        if ' / '.join(only_wiki_links) == param_value:
+                            param_value = param_value.replace(' / ', '،')
                         if param_value:
                             param_value = re.split(r'\\\\|,|،', param_value)
                             param_value = [value.strip() for value in param_value]
