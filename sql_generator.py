@@ -49,7 +49,7 @@ def db_connection():
 
 
 def sql_create_table_command_generator(table_name, columns, primary_key=None, foreign_key=None,
-                                       unique_key=None, drop_table=False):
+                                       unique_key=None, index=None, drop_table=False):
     """
     :param table_name:
     :param columns:
@@ -58,6 +58,7 @@ def sql_create_table_command_generator(table_name, columns, primary_key=None, fo
                                        'reference_column':'col_name'},{}]
     :param unique_key: defaultdict(list) {unique_name1: [col1, col2], unique_name2:[col1, col4]}
     :param drop_table: boolean, set True for drop table command
+    :param index: dic {'key_name': 'ref_column'}
     :return:
     """
     if drop_table:
@@ -84,6 +85,10 @@ def sql_create_table_command_generator(table_name, columns, primary_key=None, fo
             for val in u_key_values:
                 command += '`%s`,' % val
             command = command[:-1] + "),\n"
+
+    if index:
+        for index_name, index_ref in index.items():
+            command += "KEY `%s` (%s),\n" %(index_name, index_ref)
 
     command = command[:-2] + ')CHARSET=utf8;\n'
     return command
