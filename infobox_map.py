@@ -157,10 +157,7 @@ def json_to_row(filename):
         list_value = data[my_key]
         for mapping_info in list_value:
             for map_key in mapping_info:
-                template_type = my_key
-
                 template_name = map_key.lower().replace('_', ' ')
-                template_type = my_key
 
                 if 'infobox' in map_key.lower():
                     template_type = 'infobox'
@@ -229,69 +226,6 @@ def json_to_row_template(filename):
     data = json.load(mapping_infobox)
 
     return data
-
-
-# old version
-def check_duplicate_template(table_name, template_name):
-
-    condition = "template_name = '%s'" % template_name
-    command = "select 1 from %s where %s" % (table_name, condition)
-
-    result = sql_generator.execute_command_mysql(command)
-
-    if result.rowcount != 0:
-        return True
-    else:
-        return False
-
-
-def update_language_wiki_template(table_name):
-    command = "select * from %s" % table_name
-    result = sql_generator.execute_command_mysql(command)
-
-    for row in result:
-        lang = Utils.detect_language_v2(row['template_name'])
-        if lang != row['language_name']:
-            command = "UPDATE %s SET language_name = '%s' WHERE id = %s" % (table_name, lang, row['id'])
-            sql_generator.execute_command_mysql(command, '')
-
-
-# this is temporary function
-def get_infobox_type(template_name):
-
-    template_name = clean(str(template_name).lower().replace('_', ' '))
-    for name in Config.infobox_flags_en:
-        if name in template_name:
-            t_type = name
-            return t_type
-
-    for name in Config.infobox_flags_fa:
-        if name in template_name:
-            t_type = name
-            return t_type
-
-    for name in Config.stub_flag_en:
-        if name in template_name:
-            t_type = name
-            return t_type
-
-    for name in Config.stub_flag_fa:
-        if name in template_name:
-            t_type = 'خرد'
-            return t_type
-
-    return 'template'
-
-
-def update_wiki_farsi_template_type(table_name):
-
-    command = 'select * from ' + table_name
-    result = sql_generator.execute_command_mysql(command)
-
-    for row in result:
-        t_type = get_infobox_type(row['template_name'])
-        command = "UPDATE %s SET type = '%s' WHERE id = %s" % (table_name,t_type, row['id'])
-        sql_generator.execute_command_mysql(command, '')
 
 
 if __name__ == '__main__':

@@ -37,14 +37,12 @@ def get_disambiguation_links_regular(content):
 def extract_disambiguation(filename, dir_name):
 
     input_filename = dir_name
-
     json_list = []
 
     for page in Utils.get_wikipedia_pages(input_filename):
 
         parsed_page = parse_page(page)
         wiki_text = parsed_page.revision.find('text').text
-
         parse_wiki_text = wtp.parse(str(parsed_page))
 
         json_dict = {}
@@ -98,8 +96,6 @@ def check_path(my_dict, path_names, page_n):
             check_path(my_value, path_names, page_n)
         else:
             result = regex.match(my_value)
-            #be aware
-            result2 = regex.match(my_value)
             if not(str(result) == 'None'):
                 if not (any(s in my_value.lower() for s in pic_prefix)):
                     if myKey in path_names.keys():
@@ -133,7 +129,7 @@ def check_image(my_dict, image_names, page_n):
                     break
 
 
-def get_attribute_name(filename, attribute_type):
+def get_attribute_name(attribute_type):
 
     dir_path = Config.extracted_tuples_dir
     main_list = get_file_list_from_dir(dir_path)
@@ -156,7 +152,7 @@ def get_attribute_name(filename, attribute_type):
 
 def get_image_name(filename):
 
-    att_name = get_attribute_name(filename, 'image')
+    att_name = get_attribute_name('image')
 
     image_filename = Utils.get_json_filename(Config.extracted_disambiguation_dir, filename)
     image_name_file = open(image_filename, 'a+', encoding='utf8')
@@ -168,7 +164,7 @@ def get_image_name(filename):
 
 def get_path_name(filename):
 
-    att_name = get_attribute_name(filename, 'path')
+    att_name = get_attribute_name('path')
 
     path_filename = Utils.get_json_filename(Config.extracted_disambiguation_dir, filename)
     path_name_file = open(path_filename, 'a+', encoding='utf8')
@@ -180,5 +176,5 @@ def get_path_name(filename):
 
 
 if __name__ == '__main__':
-    #get_path_name('path')
-    extract_disambiguation('disambiguation_new')
+    get_image_name('path2')
+    #extract_disambiguation('disambiguation_new')
