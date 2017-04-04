@@ -5,19 +5,11 @@ import pymysql
 
 
 class ConnectionString:
-    # host = '194.225.227.161'
-    # port = 3306
-    # user = 'leila_oskouie'
-    # password = '123456'
-    # db = 'knowledge_graph'
-    # use_unicode = True
-    # charset = "utf8"
-
-    host = '127.0.0.1'
+    host = '194.225.227.161'
     port = 3306
-    user = 'root'
-    password = '12345'
-    db = 'test2'
+    user = ''
+    password = ''
+    db = 'knowledge_graph'
     use_unicode = True
     charset = "utf8"
 
@@ -88,7 +80,7 @@ def sql_create_table_command_generator(table_name, columns, primary_key=None, fo
 
     if index:
         for index_name, index_ref in index.items():
-            command += "KEY `%s` (%s),\n" %(index_name, index_ref)
+            command += "KEY `%s` (%s),\n" % (index_name, index_ref)
 
     command = command[:-2] + ')CHARSET=utf8;\n'
     return command
@@ -126,8 +118,9 @@ def execute_command_mysql(command, message=None):
     if conn:
         try:
             cur = conn.cursor()
-            cur.execute(command)
+            res = cur.execute(command)
             conn.commit()
+            return res
 
         except Exception as e:
             print('Some Exception Occurred ' + str(e))
@@ -141,32 +134,3 @@ def create_sql_dump(command, dir_path, file_name):
     file_path = join(dir_path, file_name + '.sql')
     with open(file_path, 'a') as f:
         f.write(command)
-
-
-def select_mysql(command):
-    conn = db_connection()
-    if conn:
-        try:
-            cur = conn.cursor(pymysql.cursors.DictCursor)
-            result = cur.execute(command)
-            return result
-
-        except Exception as e:
-            print('Some Exception Occurred' + str(e))
-
-        finally:
-            conn.close()
-
-
-def select_result_mysql(command):
-    conn = db_connection()
-    if conn:
-        try:
-            cur = conn.cursor(pymysql.cursors.DictCursor)
-            cur.execute(command)
-
-            return cur
-        except Exception as e:
-            print('Some Exception Occurred' + str(e))
-        finally:
-            conn.close()
