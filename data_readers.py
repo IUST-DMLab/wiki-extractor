@@ -69,7 +69,7 @@ def template_redirect_with_fa():
 
 
 def mapping_sql():
-    table_name = 'wiki_template_mapping_test'
+    table_name = 'wiki_template_mapping'
     table_structure = {
         'id': 'int NOT NULL AUTO_INCREMENT',
         'template_name_fa': 'varchar(500)',

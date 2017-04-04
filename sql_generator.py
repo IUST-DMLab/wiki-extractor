@@ -36,8 +36,8 @@ def db_connection():
                                      charset=ConnectionString.charset,
                                      )
         return connection
-    except Exception:
-        return None
+    except Exception as e:
+        raise e
 
 
 def sql_create_table_command_generator(table_name, columns, primary_key=None, foreign_key=None,
@@ -115,19 +115,18 @@ def insert_command(table_structure, table_name, insert_columns, rows):
 
 def execute_command_mysql(command, message=None):
     conn = db_connection()
-    if conn:
-        try:
-            cur = conn.cursor()
-            res = cur.execute(command)
-            conn.commit()
-            return res
+    try:
+        cur = conn.cursor()
+        res = cur.execute(command)
+        conn.commit()
+        return res
 
-        except Exception as e:
-            print('Some Exception Occurred ' + str(e))
-            if message:
-                print('\n ' + message)
-        finally:
-            conn.close()
+    except Exception as e:
+        print('Some Exception Occurred ' + str(e))
+        if message:
+            print('\n ' + message)
+    finally:
+        conn.close()
 
 
 def create_sql_dump(command, dir_path, file_name):
