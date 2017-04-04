@@ -116,10 +116,10 @@ def insert_command(table_structure, table_name, insert_columns, rows):
 def execute_command_mysql(command, message=None):
     conn = db_connection()
     try:
-        cur = conn.cursor()
-        res = cur.execute(command)
-        conn.commit()
-        return res
+            cur = conn.cursor(pymysql.cursors.DictCursor)
+            cur.execute(command)
+            conn.commit()
+            return cur
 
     except Exception as e:
         print('Some Exception Occurred ' + str(e))
