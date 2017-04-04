@@ -1,9 +1,10 @@
 import json
-import Config
-import os
-import Utils
-import re
 import operator
+import os
+import re
+
+import Config
+import DataUtils
 
 
 def get_file_list_from_dir(dir_name):
@@ -95,13 +96,13 @@ def get_attribute_name(attribute_type):
 def get_image_name(filename):
     att_name = get_attribute_name('image')
     sorted_image_names = sorted(att_name.items(), key=operator.itemgetter(1), reverse=True)
-    Utils.save_json(Config.extracted_disambiguation_dir, filename, sorted_image_names)
+    DataUtils.save_json(Config.extracted_disambiguation_dir, filename, sorted_image_names)
 
 
 def get_path_name(filename):
     att_name = get_attribute_name('path')
     sorted_path_names = sorted(att_name.items(), key=lambda i: i[1][0], reverse=True)
-    Utils.save_json(Config.extracted_disambiguation_dir, filename, sorted_path_names)
+    DataUtils.save_json(Config.extracted_disambiguation_dir, filename, sorted_path_names)
 
 
 if __name__ == '__main__':

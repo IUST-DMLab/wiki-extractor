@@ -1,8 +1,9 @@
 import json
-from collections import OrderedDict
-import Config
-import sql_generator
 import os
+from collections import OrderedDict
+
+import Config
+import SqlUtils
 
 
 def create_table_mysql_template(table_name, dir_path):
@@ -16,11 +17,11 @@ def create_table_mysql_template(table_name, dir_path):
 
     primary_key = ['id']
 
-    command = sql_generator.sql_create_table_command_generator(table_name, table_structure, primary_key,
-                                                               drop_table=True)
+    command = SqlUtils.sql_create_table_command_generator(table_name, table_structure, primary_key,
+                                                          drop_table=True)
 
     message = 'some exception occur while insert table wiki_farsi_templates'
-    sql_generator.execute_command_mysql(command, message)
+    SqlUtils.execute_command_mysql(command, message)
 
     command = ""
     count = 0
@@ -33,8 +34,8 @@ def create_table_mysql_template(table_name, dir_path):
         mapping_infobox = open(dstFile)
         my_row = json.load(mapping_infobox)
 
-        command += sql_generator.insert_command(table_structure, table_name, insert_columns, my_row)
-        sql_generator.execute_command_mysql(command, message)
+        command += SqlUtils.insert_command(table_structure, table_name, insert_columns, my_row)
+        SqlUtils.execute_command_mysql(command, message)
 
         command = ""
 

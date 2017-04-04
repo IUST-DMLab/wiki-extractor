@@ -1,11 +1,10 @@
 import os
-from os.path import join
 from collections import defaultdict
+from os.path import join
 
 import Config
 import DataUtils
-import Utils
-import sql_generator
+import SqlUtils
 
 
 def aggregate_abstracts():
@@ -16,7 +15,7 @@ def aggregate_abstracts():
     for path, subdirs, files in os.walk(Config.extracted_with_infobox_dir):
         for name in files:
             if 'abstracts' in name:
-                abstracts = Utils.load_json(path, name)
+                abstracts = DataUtils.load_json(path, name)
                 for page_name in abstracts:
                     abstracts_with_templates_file.write(page_name+'\n')
                     abstracts_with_templates_file.write(abstracts[page_name]+'\n\n')
@@ -24,7 +23,7 @@ def aggregate_abstracts():
     for path, subdirs, files in os.walk(Config.extracted_without_infobox_dir):
         for name in files:
             if 'abstracts' in name:
-                abstracts = Utils.load_json(path, name)
+                abstracts = DataUtils.load_json(path, name)
                 for page_name in abstracts:
                     abstracts_without_templates_file.write(page_name+'\n')
                     abstracts_without_templates_file.write(abstracts[page_name]+'\n\n')
@@ -39,23 +38,23 @@ def aggregate_categories():
     for path, subdirs, files in os.walk(Config.extracted_with_infobox_dir):
         for name in files:
             if 'categories' in name:
-                categories = Utils.load_json(path, name)
+                categories = DataUtils.load_json(path, name)
                 for page_name in categories:
                     categories_with_templates[page_name] = categories[page_name]
 
     for path, subdirs, files in os.walk(Config.extracted_without_infobox_dir):
         for name in files:
             if 'categories' in name:
-                categories = Utils.load_json(path, name)
+                categories = DataUtils.load_json(path, name)
                 for page_name in categories:
                     categories_without_templates[page_name] = categories[page_name]
 
-    Utils.save_json(Config.refined_dir, 'categories_with_templates', categories_with_templates)
-    Utils.save_json(Config.refined_dir, 'categories_without_templates', categories_without_templates)
+    DataUtils.save_json(Config.refined_dir, 'categories_with_templates', categories_with_templates)
+    DataUtils.save_json(Config.refined_dir, 'categories_without_templates', categories_without_templates)
 
 
 def template_redirect_with_fa():
-    redirects = Utils.load_json(Config.extracted_redirects_dir, DataUtils.get_redirects_filename('10'))
+    redirects = DataUtils.load_json(Config.extracted_redirects_dir, DataUtils.get_redirects_filename('10'))
     with_fa_redirects = defaultdict(list)
 
     for redirect_from, redirect_to in redirects.items():
@@ -66,7 +65,7 @@ def template_redirect_with_fa():
             if DataUtils.is_ascii(redirect_to):
                 with_fa_redirects[redirect_from].append(redirect_to)
 
-    Utils.save_json(Config.extracted_redirects_dir, '10-redirects-with-fa', with_fa_redirects)
+    DataUtils.save_json(Config.extracted_redirects_dir, '10-redirects-with-fa', with_fa_redirects)
 
 
 def mapping_sql():
@@ -83,28 +82,28 @@ def mapping_sql():
     primary_keys = ['id']
     unique_keys = {'template_name_en_fa': ['template_name_fa', 'template_name_en']}
 
-    ordered_table_structure = sql_generator.create_order_structure(table_structure, key_order)
+    ordered_table_structure = SqlUtils.create_order_structure(table_structure, key_order)
 
-    command = sql_generator.sql_create_table_command_generator(table_name, ordered_table_structure,
-                                                               primary_key=primary_keys,
-                                                               unique_key=unique_keys)
-    sql_generator.execute_command_mysql(command)
+    command = SqlUtils.sql_create_table_command_generator(table_name, ordered_table_structure,
+                                                          primary_key=primary_keys,
+                                                          unique_key=unique_keys)
+    SqlUtils.execute_command_mysql(command)
 
-    redirect_data = Utils.load_json(Config.extracted_redirects_dir, '10-redirects-with-fa')
-    mapping_data = Utils.load_json(Config.extracted_infobox_mapping_dir, Config.extracted_infobox_mapping_filename)
+    redirect_data = DataUtils.load_json(Config.extracted_redirects_dir, '10-redirects-with-fa')
+    mapping_data = DataUtils.load_json(Config.extracted_infobox_mapping_dir, Config.extracted_infobox_mapping_filename)
 
     for redirect_from, redirects in redirect_data.items():
         for redirect_to in redirects:
             row = [{'template_name_fa': redirect_from, 'template_name_en': redirect_to, 'extraction_from': 'Redirect'}]
-            query = sql_generator.insert_command(ordered_table_structure, table_name, key_order[1:3] + key_order[4:],
-                                                 row)
-            sql_generator.execute_command_mysql(query)
+            query = SqlUtils.insert_command(ordered_table_structure, table_name, key_order[1:3] + key_order[4:],
+                                            row)
+            SqlUtils.execute_command_mysql(query)
 
     for fa_infobox, en_infoboxes in mapping_data.items():
         for en_infobox in en_infoboxes:
             row = [{'template_name_fa': fa_infobox, 'template_name_en': en_infobox, 'extraction_from': 'Interlingual'}]
-            query = sql_generator.insert_command(table_structure, table_name, key_order[1:3] + key_order[4:], row)
-            sql_generator.execute_command_mysql(query)
+            query = SqlUtils.insert_command(table_structure, table_name, key_order[1:3] + key_order[4:], row)
+            SqlUtils.execute_command_mysql(query)
 
 
 if __name__ == '__main__':

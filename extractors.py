@@ -11,28 +11,28 @@ from joblib import Parallel, delayed
 
 import Config
 import DataUtils
+import LogUtils
 import SqlUtils
-import Utils
 from ThirdParty.WikiCleaner import clean
 
 
 def extract_bz2_dump(input_filename, output_dir):
-    Utils.create_directory(output_dir, show_logging=True)
+    DataUtils.create_directory(output_dir, show_logging=True)
     if not os.listdir(output_dir):
         pages_counter = 0
         extracted_pages_filename, extracted_pages_file = DataUtils.open_extracted_bz2_dump_file(pages_counter,
                                                                                                 output_dir)
 
-        for page in Utils.get_wikipedia_pages(input_filename):
+        for page in DataUtils.get_wikipedia_pages(input_filename):
             extracted_pages_file.write(page)
             pages_counter += 1
             if pages_counter % Config.extracted_pages_per_file == 0:
-                Utils.logging_pages_extraction(pages_counter, extracted_pages_filename)
+                LogUtils.logging_pages_extraction(pages_counter, extracted_pages_filename)
                 DataUtils.close_extracted_bz2_dump_file(extracted_pages_filename, extracted_pages_file)
                 extracted_pages_filename, extracted_pages_file = DataUtils.open_extracted_bz2_dump_file(pages_counter,
                                                                                                         output_dir)
 
-        Utils.logging_pages_extraction(pages_counter, extracted_pages_filename)
+        LogUtils.logging_pages_extraction(pages_counter, extracted_pages_filename)
         DataUtils.close_extracted_bz2_dump_file(extracted_pages_filename, extracted_pages_file)
         logging.info('Page Extraction Finished! Number of All Extracted Pages: %d' % pages_counter)
 
@@ -56,17 +56,17 @@ def extract_bz2_dump_information(directory, filename,
 
     pages_counter = 0
     input_filename = join(directory, filename)
-    for page in Utils.get_wikipedia_pages(filename=input_filename):
-        parsed_page = Utils.parse_page(page)
+    for page in DataUtils.get_wikipedia_pages(filename=input_filename):
+        parsed_page = DataUtils.parse_page(page)
         pages_counter += 1
 
         if pages_counter % Config.logging_interval == 0:
-            Utils.logging_information_extraction(pages_counter, input_filename)
+            LogUtils.logging_information_extraction(pages_counter, input_filename)
             gc.collect()
 
         if extract_template_names and parsed_page.ns.text == '10':
             template_dict = dict()
-            template_name, template_type, lang = Utils.get_template_name_type(parsed_page.title.text)
+            template_name, template_type, lang = DataUtils.get_template_name_type(parsed_page.title.text)
 
             template_dict['template_name'] = template_name
             template_dict['type'] = template_type
@@ -109,7 +109,7 @@ def extract_bz2_dump_information(directory, filename,
             page_has_infobox = False
             template_names = wiki_text.templates
             for template in template_names:
-                template_name, infobox_type = Utils.get_infobox_name_type(template.name)
+                template_name, infobox_type = DataUtils.get_infobox_name_type(template.name)
                 if infobox_type:
                     page_has_infobox = True
                     if template_name not in infoboxes:
@@ -155,41 +155,41 @@ def extract_bz2_dump_information(directory, filename,
         del wiki_text
 
     if extract_abstracts:
-        Utils.save_json(Config.extracted_abstracts_dir, filename, abstracts)
+        DataUtils.save_json(Config.extracted_abstracts_dir, filename, abstracts)
         if extract_pages_infoboxes:
-            Utils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_abstracts_filename(filename),
-                            abstracts, filter_dict=pages_with_infobox)
-            Utils.save_json(Config.extracted_without_infobox_dir, DataUtils.get_abstracts_filename(filename),
-                            abstracts, filter_dict=pages_without_infobox)
+            DataUtils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_abstracts_filename(filename),
+                                abstracts, filter_dict=pages_with_infobox)
+            DataUtils.save_json(Config.extracted_without_infobox_dir, DataUtils.get_abstracts_filename(filename),
+                                abstracts, filter_dict=pages_without_infobox)
 
     if extract_page_ids:
-        Utils.save_json(Config.extracted_page_ids_dir, filename, page_ids)
+        DataUtils.save_json(Config.extracted_page_ids_dir, filename, page_ids)
 
     if extract_revision_ids:
-        Utils.save_json(Config.extracted_revision_ids_dir, filename, revision_ids)
+        DataUtils.save_json(Config.extracted_revision_ids_dir, filename, revision_ids)
         if extract_pages_infoboxes:
-            Utils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_revision_ids_filename(filename),
-                            revision_ids, filter_dict=pages_with_infobox)
-            Utils.save_json(Config.extracted_without_infobox_dir, DataUtils.get_revision_ids_filename(filename),
-                            revision_ids, filter_dict=pages_without_infobox)
+            DataUtils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_revision_ids_filename(filename),
+                                revision_ids, filter_dict=pages_with_infobox)
+            DataUtils.save_json(Config.extracted_without_infobox_dir, DataUtils.get_revision_ids_filename(filename),
+                                revision_ids, filter_dict=pages_without_infobox)
 
     if extract_wiki_texts:
-        Utils.save_json(Config.extracted_wiki_texts_dir, filename, wiki_texts)
+        DataUtils.save_json(Config.extracted_wiki_texts_dir, filename, wiki_texts)
         if extract_pages_infoboxes:
-            Utils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_wiki_texts_filename(filename),
-                            wiki_texts, filter_dict=pages_with_infobox)
-            Utils.save_json(Config.extracted_without_infobox_dir, DataUtils.get_wiki_texts_filename(filename),
-                            wiki_texts, filter_dict=pages_without_infobox)
+            DataUtils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_wiki_texts_filename(filename),
+                                wiki_texts, filter_dict=pages_with_infobox)
+            DataUtils.save_json(Config.extracted_without_infobox_dir, DataUtils.get_wiki_texts_filename(filename),
+                                wiki_texts, filter_dict=pages_without_infobox)
 
     if extract_pages_infoboxes:
-        Utils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_infoboxes_filename(filename), infoboxes)
-        Utils.save_json(Config.extracted_pages_with_infobox_dir, filename, pages_with_infobox)
-        Utils.save_json(Config.extracted_pages_without_infobox_dir, filename, pages_without_infobox)
+        DataUtils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_infoboxes_filename(filename), infoboxes)
+        DataUtils.save_json(Config.extracted_pages_with_infobox_dir, filename, pages_with_infobox)
+        DataUtils.save_json(Config.extracted_pages_without_infobox_dir, filename, pages_without_infobox)
 
     if extract_template_names:
-        Utils.save_json(extracted_template_names_dir, filename, template_names_list)
+        DataUtils.save_json(extracted_template_names_dir, filename, template_names_list)
 
-    Utils.logging_information_extraction(pages_counter, input_filename)
+    LogUtils.logging_information_extraction(pages_counter, input_filename)
 
 
 def extract_fawiki_latest_pages_articles_dump():
@@ -285,13 +285,13 @@ def extract_page_ids_from_sql_dump():
             page_id, page_namespace, page_title = columns[0], columns[1], columns[2]
             page_ids[page_id] = page_title
 
-    Utils.save_json(Config.extracted_page_ids_dir, Config.extracted_page_ids_filename, page_ids)
+    DataUtils.save_json(Config.extracted_page_ids_dir, Config.extracted_page_ids_filename, page_ids)
 
 
 def extract_lang_links_from_sql_dump():
     lang_links_en = dict()
     lang_links_ar = dict()
-    page_ids = Utils.load_json(Config.extracted_page_ids_dir, Config.extracted_page_ids_filename)
+    page_ids = DataUtils.load_json(Config.extracted_page_ids_dir, Config.extracted_page_ids_filename)
 
     all_records = SqlUtils.get_sql_rows(Config.fawiki_latest_lang_links_dump)
     for record in all_records:
@@ -305,14 +305,14 @@ def extract_lang_links_from_sql_dump():
                 elif ll_lang == 'ar':
                     lang_links_ar[ll_from] = ll_title
 
-    Utils.save_json(Config.extracted_lang_links_dir, Config.extracted_en_lang_link_filename, lang_links_en)
-    Utils.save_json(Config.extracted_lang_links_dir, Config.extracted_ar_lang_link_filename, lang_links_ar)
+    DataUtils.save_json(Config.extracted_lang_links_dir, Config.extracted_en_lang_link_filename, lang_links_en)
+    DataUtils.save_json(Config.extracted_lang_links_dir, Config.extracted_ar_lang_link_filename, lang_links_ar)
 
 
 def extract_redirects_from_sql_dump():
     redirects = dict()
     reverse_redirects = dict()
-    page_ids = Utils.load_json(Config.extracted_page_ids_dir, Config.extracted_page_ids_filename)
+    page_ids = DataUtils.load_json(Config.extracted_page_ids_dir, Config.extracted_page_ids_filename)
 
     all_records = SqlUtils.get_sql_rows(Config.fawiki_latest_redirect_dump)
     for record in all_records:
@@ -330,10 +330,10 @@ def extract_redirects_from_sql_dump():
                 reverse_redirects[ns][r_title].append(r_from)
 
     for ns in redirects:
-        Utils.save_json(Config.extracted_redirects_dir, DataUtils.get_redirects_filename(ns), redirects[ns])
+        DataUtils.save_json(Config.extracted_redirects_dir, DataUtils.get_redirects_filename(ns), redirects[ns])
     for ns in reverse_redirects:
-        Utils.save_json(Config.extracted_reverse_redirects_dir, DataUtils.get_redirects_filename(ns),
-                        reverse_redirects[ns])
+        DataUtils.save_json(Config.extracted_reverse_redirects_dir, DataUtils.get_redirects_filename(ns),
+                            reverse_redirects[ns])
 
     sql_dump = SqlUtils.get_wiki_template_redirect_sql_dump(redirects['10'])
     SqlUtils.save_sql_dump(Config.extracted_redirects_dir, '10-redirects.sql', sql_dump)
@@ -350,7 +350,7 @@ def extract_category_links_from_sql_dump(page_ids, output_directory, output_file
                 cl_from = page_ids[cl_from]
                 category_links[cl_from].append(cl_to)
 
-    Utils.save_json(output_directory, output_filename, category_links)
+    DataUtils.save_json(output_directory, output_filename, category_links)
 
 
 def extract_external_links_from_sql_dump(page_ids, output_directory, output_filename):
@@ -364,7 +364,7 @@ def extract_external_links_from_sql_dump(page_ids, output_directory, output_file
                 el_from = page_ids[el_from]
                 external_links[el_from].append(el_to)
 
-    Utils.save_json(output_directory, output_filename, external_links)
+    DataUtils.save_json(output_directory, output_filename, external_links)
 
 
 def extract_wiki_links_from_sql_dump(page_ids, output_directory, output_filename):
@@ -378,11 +378,11 @@ def extract_wiki_links_from_sql_dump(page_ids, output_directory, output_filename
                 pl_from = page_ids[pl_from]
                 wiki_links[pl_from].append(pl_title)
 
-    Utils.save_json(output_directory, output_filename, wiki_links)
+    DataUtils.save_json(output_directory, output_filename, wiki_links)
 
 
 def extract_category_external_wiki_links_from_sql_dumps():
-    page_ids = Utils.load_json(Config.extracted_page_ids_dir, Config.extracted_page_ids_filename)
+    page_ids = DataUtils.load_json(Config.extracted_page_ids_dir, Config.extracted_page_ids_filename)
 
     extract_category_links_from_sql_dump(page_ids, Config.extracted_category_links_dir,
                                          Config.extracted_category_links_filename)
@@ -396,6 +396,6 @@ def extract_category_external_wiki_links_from_sql_dumps():
     page_ids_filenames.remove(Config.extracted_page_ids_filename+'.json')
 
     for page_ids_filename in page_ids_filenames:
-        page_ids = Utils.load_json(Config.extracted_page_ids_dir, page_ids_filename)
+        page_ids = DataUtils.load_json(Config.extracted_page_ids_dir, page_ids_filename)
 
         extract_wiki_links_from_sql_dump(page_ids, Config.extracted_wiki_links_dir, page_ids_filename)

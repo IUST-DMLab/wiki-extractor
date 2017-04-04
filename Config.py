@@ -88,3 +88,13 @@ extract_bz2_dump_information_parameters = {'extract_abstracts': False,
                                            'extract_pages_infoboxes': False,
                                            'extract_template_names': False,
                                            'extracted_template_names_dir': None}
+
+
+class ConnectionString:
+    host = '194.225.227.161'
+    port = 3306
+    user = ''
+    password = ''
+    db = 'knowledge_graph'
+    use_unicode = True
+    charset = "utf8"
