@@ -59,7 +59,6 @@ extracted_wiki_texts_dir = join(extracted_dir, 'wiki_texts')
 
 extracted_with_infobox_dir = join(extracted_dir, 'with_infobox')
 extracted_without_infobox_dir = join(extracted_dir, 'without_infobox')
-extracted_ontology_dir = join(extracted_dir, 'dbpedia_ontology')
 
 
 reorganized_infoboxes_dir = join(refined_dir, 'infoboxes')
