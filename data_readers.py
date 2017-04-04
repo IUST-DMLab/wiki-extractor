@@ -3,6 +3,7 @@ from os.path import join
 from collections import defaultdict
 
 import Config
+import DataUtils
 import Utils
 import sql_generator
 
@@ -54,15 +55,15 @@ def aggregate_categories():
 
 
 def template_redirect_with_fa():
-    redirects = Utils.load_json(Config.extracted_redirects_dir, Utils.get_redirects_filename('10'))
+    redirects = Utils.load_json(Config.extracted_redirects_dir, DataUtils.get_redirects_filename('10'))
     with_fa_redirects = defaultdict(list)
 
     for redirect_from, redirect_to in redirects.items():
-        if Utils.is_ascii(redirect_from):
-            if Utils.without_en_chars(redirect_to):
+        if DataUtils.is_ascii(redirect_from):
+            if DataUtils.without_en_chars(redirect_to):
                 with_fa_redirects[redirect_to].append(redirect_from)
-        elif Utils.without_en_chars(redirect_from):
-            if Utils.is_ascii(redirect_to):
+        elif DataUtils.without_en_chars(redirect_from):
+            if DataUtils.is_ascii(redirect_to):
                 with_fa_redirects[redirect_from].append(redirect_to)
 
     Utils.save_json(Config.extracted_redirects_dir, '10-redirects-with-fa', with_fa_redirects)

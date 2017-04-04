@@ -51,13 +51,3 @@ def get_file_list_from_dir(dir_name):
 
 if __name__ == '__main__':
     create_table_mysql_template('wiki_en_templates', Config.extracted_en_template_names_dir)
-
-
-
-
-
-
-
-
-
-

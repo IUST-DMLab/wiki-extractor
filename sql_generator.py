@@ -69,8 +69,8 @@ def sql_create_table_command_generator(table_name, columns, primary_key=None, fo
 
     if foreign_key:
         for f_key in foreign_key:
-            command += "FOREIGN KEY (%s) REFERENCE %s(%s),\n" % (f_key.column, f_key.reference_table,
-                                                                 f_key.reference_column)
+            command += "FOREIGN KEY (%s) REFERENCES %s(%s),\n" % (f_key.column, f_key.reference_table,
+                                                                  f_key.reference_column)
     if unique_key:
         for u_key_name, u_key_values in unique_key.items():
             command += "UNIQUE KEY `%s` (" % u_key_name

@@ -3,13 +3,15 @@ from collections import OrderedDict
 from os.path import join
 
 import Config
+import DataUtils
+import SqlUtils
 import Utils
 
 
 def reorganize_infoboxes():
     reorganized_infoboxes = dict()
     directory = Config.extracted_with_infobox_dir
-    filenames = [filename for filename in os.listdir(directory) if Utils.is_infobox_file(filename)]
+    filenames = [filename for filename in os.listdir(directory) if DataUtils.is_infobox_file(filename)]
     for filename in filenames:
         infoboxes = Utils.load_json(directory, filename)
         for infobox_name in infoboxes:
@@ -32,9 +34,9 @@ def reorganize_infoboxes():
 def build_infobox_tuples():
     directory = Config.extracted_with_infobox_dir
     infoboxes_filenames = sorted([filename for filename in os.listdir(directory)
-                                  if Utils.is_infobox_file(filename)])
+                                  if DataUtils.is_infobox_file(filename)])
     revision_ids_filenames = sorted([filename for filename in os.listdir(directory)
-                                     if Utils.is_revision_ids_file(filename)])
+                                     if DataUtils.is_revision_ids_file(filename)])
     for infobox_filename, revision_ids_filename in zip(infoboxes_filenames, revision_ids_filenames):
         tuples = list()
         infoboxes = Utils.load_json(directory, infobox_filename)
@@ -84,21 +86,21 @@ def count_number_of_each_infobox():
         template_name, infobox_type = Utils.get_infobox_name_type(infobox_name)
         templates_transcluded.append({'template_name': template_name,
                                       'template_type': infobox_type,
-                                      'language': Utils.get_infobox_lang(infobox_type),
+                                      'language': DataUtils.get_infobox_lang(infobox_type),
                                       'count': infobox_counters[infobox_name]})
 
     Utils.save_json(Config.infobox_counters_dir, 'infobox_counters',
                     sorted(templates_transcluded, key=lambda item: item['count'], reverse=True), sort_keys=False)
 
     order = ['template_name', 'template_type', 'language', 'count']
-    sql_dump = Utils.get_wiki_templates_transcluded_on_pages_sql_dump(templates_transcluded, order)
-    Utils.save_sql_dump(Config.infobox_counters_dir, 'infobox_counters.sql', sql_dump)
+    sql_dump = SqlUtils.get_wiki_templates_transcluded_on_pages_sql_dump(templates_transcluded, order)
+    SqlUtils.save_sql_dump(Config.infobox_counters_dir, 'infobox_counters.sql', sql_dump)
 
 
 def aggregate_infobox_properties():
     properties = dict()
     directory = Config.extracted_with_infobox_dir
-    infoboxes_filenames = [filename for filename in os.listdir(directory) if Utils.is_infobox_file(filename)]
+    infoboxes_filenames = [filename for filename in os.listdir(directory) if DataUtils.is_infobox_file(filename)]
     for infoboxes_filename in infoboxes_filenames:
         infoboxes = Utils.load_json(directory, infoboxes_filename)
         for infobox_name in infoboxes:

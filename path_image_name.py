@@ -27,13 +27,8 @@ def check_path(my_dict, path_names, page_n):
         r'(?:/?|[/?]\S+)$)'
         , re.IGNORECASE)
 
-    # regex2 = re.compile(
-    #     r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
-    #     r'localhost|'  # localhost...
-    #     r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-    #     r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-
-    pic_prefix = ['jpg', 'tif', 'tiff', 'gif', 'png', 'jpeg', 'svg', 'exif', 'bmp', 'ppm','pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
+    pic_prefix = ['jpg', 'tif', 'tiff', 'gif', 'png', 'jpeg', 'svg', 'exif',
+                  'bmp', 'ppm', 'pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
 
     for myKey in my_dict:
 
@@ -56,7 +51,8 @@ def check_path(my_dict, path_names, page_n):
 
 def check_image(my_dict, image_names, page_n):
 
-    pic_prefix = ['jpg', 'tif','tiff', 'gif', 'png', 'jpeg', 'svg', 'exif', 'bmp', 'ppm','pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
+    pic_prefix = ['jpg', 'tif', 'tiff', 'gif', 'png', 'jpeg', 'svg', 'exif',
+                  'bmp', 'ppm', 'pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
 
     for my_Key in my_dict:
         my_value = my_dict[my_Key]
