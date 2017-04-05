@@ -1,4 +1,5 @@
 from os.path import join, dirname, realpath
+import re
 
 extracted_pages_per_file = 100000
 logging_interval = 10000
@@ -25,7 +26,7 @@ extracted_abstracts_dir = join(extracted_dir, 'abstracts')
 extracted_category_links_dir = join(extracted_dir, 'category_links')
 extracted_category_links_filename = 'all'
 
-extracted_disambiguation_dir = join(extracted_dir, 'disambiguation')
+extracted_disambiguations_dir = join(extracted_dir, 'disambiguations')
 
 extracted_en_pages_articles_dir = join(extracted_dir, 'en_pages_articles')
 extracted_en_template_names_dir = join(extracted_dir, 'en_template_names')
@@ -82,6 +83,8 @@ stub_flag_en = ['stub']
 
 stub_flag_fa = ['خرد']
 
+see_also_in_fa = 'جستارهای وابسته'
+
 
 extract_bz2_dump_information_parameters = {
     'extract_abstracts': False,
@@ -89,6 +92,7 @@ extract_bz2_dump_information_parameters = {
     'extract_revision_ids': False,
     'extract_wiki_texts': False,
     'extract_pages_infoboxes': False,
+    'extract_disambiguations': False,
     'extract_template_names': False,
     'extracted_template_names_dir': None
 }
@@ -125,3 +129,6 @@ wiki_template_mapping_table_structure = {
 wiki_template_mapping_key_order = ['id', 'template_name_fa', 'template_name_en', 'approved', 'extraction_from']
 wiki_template_mapping_primary_keys = ['id']
 wiki_template_mapping_unique_keys = {'template_name_en_fa': ['template_name_fa', 'template_name_en']}
+
+
+disambiguation_regex = re.compile(r'(?:^\* *\[\[.+?\]\])')

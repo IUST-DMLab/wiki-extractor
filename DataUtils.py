@@ -2,6 +2,7 @@ import bz2
 import json
 import logging
 import os
+import re
 import string
 from collections import defaultdict
 from genericpath import exists
@@ -208,3 +209,20 @@ def get_infobox_name_type(template_name):
         infobox_type = None
 
     return template_name, infobox_type
+
+
+def get_disambiguation_links_regular(sentences):
+    sentences = sentences.splitlines()
+    disambiguation_links = list()
+
+    for sentence in sentences:
+        if Config.see_also_in_fa in sentence:
+            break
+
+        disambiguation_regex_match_result = Config.disambiguation_regex.match(sentence)
+        if not (str(disambiguation_regex_match_result) == 'None'):
+            start_index = sentence.find('[[')
+            end_index = sentence.find(']]')
+            disambiguation_links.append(sentence[start_index+2:end_index])
+
+    return disambiguation_links

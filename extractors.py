@@ -43,6 +43,7 @@ def extract_bz2_dump_information(directory, filename,
                                  extract_revision_ids=False,
                                  extract_wiki_texts=False,
                                  extract_pages_infoboxes=False,
+                                 extract_disambiguations=False,
                                  extract_template_names=False,
                                  extracted_template_names_dir=None):
     abstracts = dict()
@@ -52,6 +53,7 @@ def extract_bz2_dump_information(directory, filename,
     infoboxes = dict()
     pages_with_infobox = dict()
     pages_without_infobox = list()
+    disambiguations = list()
     template_names_list = list()
 
     pages_counter = 0
@@ -89,7 +91,7 @@ def extract_bz2_dump_information(directory, filename,
             wiki_texts[page_name] = text
 
         wiki_text = str()
-        if extract_abstracts or extract_pages_infoboxes:
+        if extract_abstracts or extract_pages_infoboxes or extract_disambiguations:
             wiki_text = wtp.parse(text)
 
         if extract_abstracts:
@@ -152,6 +154,18 @@ def extract_bz2_dump_information(directory, filename,
                 pages_without_infobox.append(page_name)
 
             del template_names
+
+        if extract_disambiguations:
+            disambiguation_dict = dict()
+            template_names = wiki_text.templates
+            for flag in Config.disambigution_flags:
+                if any(flag in DataUtils.get_template_name_type(template.name)[0] for template in template_names):
+                    disambiguation_dict['title'] = page_name
+                    disambiguation_dict['field'] = DataUtils.get_disambiguation_links_regular(str(text))
+                    disambiguations.append(disambiguation_dict)
+                    break
+            del template_names
+
         del wiki_text
 
     if extract_abstracts:
@@ -185,6 +199,9 @@ def extract_bz2_dump_information(directory, filename,
         DataUtils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_infoboxes_filename(filename), infoboxes)
         DataUtils.save_json(Config.extracted_pages_with_infobox_dir, filename, pages_with_infobox)
         DataUtils.save_json(Config.extracted_pages_without_infobox_dir, filename, pages_without_infobox)
+
+    if extract_disambiguations:
+        DataUtils.save_json(Config.extracted_disambiguations_dir, filename, disambiguations)
 
     if extract_template_names:
         DataUtils.save_json(extracted_template_names_dir, filename, template_names_list)
@@ -246,6 +263,13 @@ def extract_fawiki_pages_infoboxes():
     multiprocess_extraction(directory, parameters)
 
 
+def extract_fawiki_disambiguations():
+    directory = Config.extracted_fa_pages_articles_dir
+    parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
+    parameters['extract_disambiguations'] = True
+    multiprocess_extraction(directory, parameters)
+
+
 def extract_fawiki_template_names():
     directory = Config.extracted_fa_pages_articles_dir
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
@@ -271,6 +295,7 @@ def extract_fawiki_bz2_dump_information():
     parameters['extract_revision_ids'] = True
     parameters['extract_wiki_texts'] = True
     parameters['extract_pages_infoboxes'] = True
+    parameters['extract_disambiguations'] = True
     parameters['extract_template_names'] = True
     parameters['extracted_template_names_dir'] = Config.extracted_fa_template_names_dir
     multiprocess_extraction(directory, parameters)
