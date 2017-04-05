@@ -1,5 +1,5 @@
 import os
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from os.path import join
 
 import Config
@@ -91,7 +91,7 @@ def count_number_of_each_infobox():
     DataUtils.save_json(Config.infobox_counters_dir, 'infobox_counters',
                         sorted(templates_transcluded, key=lambda item: item['count'], reverse=True), sort_keys=False)
 
-    order = ['template_name', 'template_type', 'language', 'count']
+    order = Config.wiki_templates_transcluded_on_pages_key_order
     sql_dump = SqlUtils.get_wiki_templates_transcluded_on_pages_sql_dump(templates_transcluded, order)
     SqlUtils.save_sql_dump(Config.infobox_counters_dir, 'infobox_counters.sql', sql_dump)
 
@@ -114,3 +114,54 @@ def aggregate_infobox_properties():
     DataUtils.save_json(Config.infobox_predicates_dir, 'infobox_predicates',
                         OrderedDict(sorted(properties.items(), key=lambda item: item[1], reverse=True)),
                         sort_keys=False)
+
+
+def template_redirect_with_fa():
+    redirects = DataUtils.load_json(Config.extracted_redirects_dir, DataUtils.get_redirects_filename('10'))
+    with_fa_redirects = defaultdict(list)
+
+    for redirect_from, redirect_to in redirects.items():
+        if DataUtils.is_ascii(redirect_from):
+            if DataUtils.without_en_chars(redirect_to):
+                with_fa_redirects[redirect_to].append(redirect_from)
+        elif DataUtils.without_en_chars(redirect_from):
+            if DataUtils.is_ascii(redirect_to):
+                with_fa_redirects[redirect_from].append(redirect_to)
+
+    DataUtils.save_json(Config.extracted_redirects_dir, '10-redirects-with-fa', with_fa_redirects)
+
+
+def mapping_sql():
+    table_name = Config.wiki_template_mapping_table_name
+    table_structure = Config.wiki_template_mapping_table_structure
+
+    key_order = Config.wiki_template_mapping_key_order
+    primary_keys = Config.wiki_template_mapping_primary_keys
+    unique_keys = Config.wiki_template_mapping_unique_keys
+
+    ordered_table_structure = SqlUtils.create_order_structure(table_structure, key_order)
+
+    command = SqlUtils.sql_create_table_command_generator(table_name, ordered_table_structure,
+                                                          primary_key=primary_keys,
+                                                          unique_key=unique_keys)
+    SqlUtils.execute_command_mysql(command)
+
+    redirect_data = DataUtils.load_json(Config.extracted_redirects_dir, '10-redirects-with-fa')
+    mapping_data = DataUtils.load_json(Config.extracted_infobox_mapping_dir, Config.extracted_infobox_mapping_filename)
+
+    for redirect_from, redirects in redirect_data.items():
+        for redirect_to in redirects:
+            row = [{Config.wiki_template_mapping_key_order[1]: redirect_from,
+                    Config.wiki_template_mapping_key_order[2]: redirect_to,
+                    Config.wiki_template_mapping_key_order[4]: 'Redirect'}]
+            query = SqlUtils.insert_command(ordered_table_structure, table_name, key_order[1:3] + key_order[4:],
+                                            row)
+            SqlUtils.execute_command_mysql(query)
+
+    for fa_infobox, en_infoboxes in mapping_data.items():
+        for en_infobox in en_infoboxes:
+            row = [{Config.wiki_template_mapping_key_order[1]: fa_infobox,
+                    Config.wiki_template_mapping_key_order[2]: en_infobox,
+                    Config.wiki_template_mapping_key_order[4]: 'Interlingual'}]
+            query = SqlUtils.insert_command(table_structure, table_name, key_order[1:3] + key_order[4:], row)
+            SqlUtils.execute_command_mysql(query)

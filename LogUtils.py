@@ -15,9 +15,13 @@ def logging_file_closing(filename):
     logging_file_operations(filename, 'Closed')
 
 
+def logging_extraction(pages_number, filename, message):
+    logging.info('%d Pages %s from %s!' % (pages_number, message, filename))
+
+
 def logging_pages_extraction(pages_number, filename):
-    logging.info('%d Pages Extracted from %s!' % (pages_number, filename))
+    logging_extraction(pages_number, filename, 'Extracted')
 
 
 def logging_information_extraction(pages_number, filename):
-    logging.info('%d Pages Checked from %s!' % (pages_number, filename))
+    logging_extraction(pages_number, filename, 'Checked')

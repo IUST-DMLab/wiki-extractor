@@ -39,7 +39,7 @@ def get_sql_rows(file_name, encoding='utf8'):
 
 
 def get_wiki_templates_transcluded_on_pages_sql_dump(rows, order):
-    table_name = 'wiki_templates_transcluded_on_pages'
+    table_name = Config.wiki_templates_transcluded_on_pages_table_name
     command = "INSERT INTO `%s` VALUES " % table_name
     for i, row in enumerate(rows):
         command += "('%s','%s','%s',%s)," % (row[order[0]].replace("'", "''"), row[order[1]].replace("'", "''"),

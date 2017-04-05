@@ -83,13 +83,15 @@ stub_flag_en = ['stub']
 stub_flag_fa = ['خرد']
 
 
-extract_bz2_dump_information_parameters = {'extract_abstracts': False,
-                                           'extract_page_ids': False,
-                                           'extract_revision_ids': False,
-                                           'extract_wiki_texts': False,
-                                           'extract_pages_infoboxes': False,
-                                           'extract_template_names': False,
-                                           'extracted_template_names_dir': None}
+extract_bz2_dump_information_parameters = {
+    'extract_abstracts': False,
+    'extract_page_ids': False,
+    'extract_revision_ids': False,
+    'extract_wiki_texts': False,
+    'extract_pages_infoboxes': False,
+    'extract_template_names': False,
+    'extracted_template_names_dir': None
+}
 
 
 class ConnectionString:
@@ -100,3 +102,26 @@ class ConnectionString:
     db = 'knowledge_graph'
     use_unicode = True
     charset = "utf8"
+
+
+wiki_templates_transcluded_on_pages_table_name = 'wiki_templates_transcluded_on_pages'
+wiki_templates_transcluded_on_pages_table_structure = {
+    'template_name': 'varchar(256) default NULL',
+    'template_type': 'varchar(256) NOT NULL',
+    'language': 'varchar(10) NOT NULL',
+    'count': 'int(11) NOT NULL'
+}
+wiki_templates_transcluded_on_pages_key_order = ['template_name', 'template_type', 'language', 'count']
+
+
+wiki_template_mapping_table_name = 'wiki_template_mapping'
+wiki_template_mapping_table_structure = {
+    'id': 'int NOT NULL AUTO_INCREMENT',
+    'template_name_fa': 'varchar(500)',
+    'template_name_en': 'varchar(500)',
+    'approved': 'tinyint default NULL',
+    'extraction_from': 'varchar(100)',
+}
+wiki_template_mapping_key_order = ['id', 'template_name_fa', 'template_name_en', 'approved', 'extraction_from']
+wiki_template_mapping_primary_keys = ['id']
+wiki_template_mapping_unique_keys = {'template_name_en_fa': ['template_name_fa', 'template_name_en']}
