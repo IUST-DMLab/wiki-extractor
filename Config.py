@@ -59,6 +59,8 @@ extracted_wiki_texts_dir = join(extracted_dir, 'wiki_texts')
 
 extracted_with_infobox_dir = join(extracted_dir, 'with_infobox')
 extracted_without_infobox_dir = join(extracted_dir, 'without_infobox')
+extracted_path_name_dir = join(extracted_dir, 'path')
+extracted_image_name_dir = join(extracted_dir, 'image')
 
 
 reorganized_infoboxes_dir = join(refined_dir, 'infoboxes')

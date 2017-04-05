@@ -96,15 +96,16 @@ def get_attribute_name(attribute_type):
 def get_image_name(filename):
     att_name = get_attribute_name('image')
     sorted_image_names = sorted(att_name.items(), key=operator.itemgetter(1), reverse=True)
-    DataUtils.save_json(Config.extracted_disambiguation_dir, filename, sorted_image_names)
+    DataUtils.save_json(Config.extracted_image_name_dir, filename, sorted_image_names)
 
 
 def get_path_name(filename):
     att_name = get_attribute_name('path')
     sorted_path_names = sorted(att_name.items(), key=lambda i: i[1][0], reverse=True)
-    DataUtils.save_json(Config.extracted_disambiguation_dir, filename, sorted_path_names)
+    DataUtils.save_json(Config.extracted_path_name_dir, filename, sorted_path_names)
 
 
 if __name__ == '__main__':
     get_image_name('image_name')
     get_path_name('path_name')
+

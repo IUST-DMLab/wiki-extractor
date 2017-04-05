@@ -49,4 +49,5 @@ def extract_disambiguation(filename, dir_name):
 
 
 if __name__ == '__main__':
-    extract_disambiguation('disambiguation')
+    #  notice: I pass dir as argument because mine is different from yours
+    extract_disambiguation('disambiguation_old', Config.wikipedia_dumps_dir+'/fawiki-latest-pages-meta-current.xml.bz2')
