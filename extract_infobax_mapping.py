@@ -11,7 +11,7 @@ import extractors
 
 
 def extract_en_infobox(filename, fa_infoboxes_per_en_pages):
-    input_filename = join(Config.extracted_en_pages_articles_dir, filename)
+    input_filename = join(Config.extracted_pages_articles_dir['en'], filename)
 
     mapping = defaultdict(list)
     for page in DataUtils.get_wikipedia_pages(filename=input_filename):
@@ -32,28 +32,16 @@ def extract_en_infobox(filename, fa_infoboxes_per_en_pages):
 
 def fa_en_infobox_mapping():
     """
-    1. find pages in fa dump with fa_flag infoboxex
-    2. find en pages of step1 pages from langlink results
+    1.
+    2.
     3. read en dump and extract template of pages in step2
     """
 
-    en_lang_link = DataUtils.load_json(Config.extracted_lang_links_dir, Config.extracted_en_lang_link_filename)
+    fa_infoboxes_per_en_pages = DataUtils.get_fa_infoboxes_per_en_pages()
 
-    fa_infoboxes_per_pages = DataUtils.get_fa_infoboxes_per_pages()
-    fa_infoboxes_per_en_pages = defaultdict(list)
+    extractors.extract_bz2_dump('en')
 
-    for fa_name, infoboxes in fa_infoboxes_per_pages.items():
-        try:
-            fa_infoboxes_per_en_pages[en_lang_link[fa_name.replace(' ', '_')]].extend(infoboxes)
-        except KeyError:
-            continue
-
-    del en_lang_link
-    del fa_infoboxes_per_pages
-
-    extractors.extract_bz2_dump(Config.enwiki_latest_pages_articles_dump, Config.extracted_en_pages_articles_dir)
-
-    extracted_en_pages_files = os.listdir(Config.extracted_en_pages_articles_dir)
+    extracted_en_pages_files = os.listdir(Config.extracted_pages_articles_dir['en'])
 
     if extracted_en_pages_files:
         mapping_list = Parallel(n_jobs=-1)(delayed(extract_en_infobox)(filename, fa_infoboxes_per_en_pages)

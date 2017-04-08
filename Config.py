@@ -1,8 +1,13 @@
 from os.path import join, dirname, realpath
 import re
 
-extracted_pages_per_file = 100000
-logging_interval = 10000
+extracted_pages_per_file = dict()
+extracted_pages_per_file['fa'] = 100000
+extracted_pages_per_file['en'] = 1000000
+
+logging_interval = dict()
+logging_interval['fa'] = 10000
+logging_interval['en'] = 100000
 
 current_dir = dirname(realpath(__file__))
 resources_dir = join(current_dir, 'resources')
@@ -12,13 +17,15 @@ extracted_dir = join(resources_dir, 'extracted')
 refined_dir = join(resources_dir, 'refined')
 
 
-enwiki_latest_pages_articles_dump = join(wikipedia_dumps_dir, 'enwiki-latest-pages-articles.xml.bz2')
+latest_pages_articles_dump = dict()
+latest_pages_articles_dump['en'] = join(wikipedia_dumps_dir, 'enwiki-latest-pages-articles.xml.bz2')
+latest_pages_articles_dump['fa'] = join(wikipedia_dumps_dir, 'fawiki-latest-pages-articles.xml.bz2')
+
 fawiki_latest_category_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-categorylinks.sql.gz')
 fawiki_latest_external_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-externallinks.sql.gz')
 fawiki_latest_lang_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-langlinks.sql.gz')
 fawiki_latest_page_dump = join(wikipedia_dumps_dir, 'fawiki-latest-page.sql.gz')
 fawiki_latest_page_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pagelinks.sql.gz')
-fawiki_latest_pages_articles_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pages-articles.xml.bz2')
 fawiki_latest_redirect_dump = join(wikipedia_dumps_dir, 'fawiki-latest-redirect.sql.gz')
 
 
@@ -28,14 +35,16 @@ extracted_category_links_filename = 'all'
 
 extracted_disambiguations_dir = join(extracted_dir, 'disambiguations')
 
-extracted_en_pages_articles_dir = join(extracted_dir, 'en_pages_articles')
-extracted_en_template_names_dir = join(extracted_dir, 'en_template_names')
+extracted_pages_articles_dir = dict()
+extracted_pages_articles_dir['fa'] = join(extracted_dir, 'fa_pages_articles')
+extracted_pages_articles_dir['en'] = join(extracted_dir, 'en_pages_articles')
 
 extracted_external_links_dir = join(extracted_dir, 'external_links')
 extracted_external_links_filename = 'all'
 
-extracted_fa_pages_articles_dir = join(extracted_dir, 'fa_pages_articles')
-extracted_fa_template_names_dir = join(extracted_dir, 'fa_template_names')
+extracted_template_names_dir = dict()
+extracted_template_names_dir['fa'] = join(extracted_dir, 'fa_template_names')
+extracted_template_names_dir['en'] = join(extracted_dir, 'en_template_names')
 
 extracted_infobox_mapping_dir = join(extracted_dir, 'infobox_mapping')
 extracted_infobox_mapping_filename = 'mappings'
@@ -47,9 +56,18 @@ extracted_ar_lang_link_filename = 'ar'
 extracted_page_ids_dir = join(extracted_dir, 'page_ids')
 extracted_page_ids_filename = 'all'
 
-extracted_pages_dir = join(extracted_dir, 'pages')
-extracted_pages_with_infobox_dir = join(extracted_pages_dir, 'with_infobox')
-extracted_pages_without_infobox_dir = join(extracted_pages_dir, 'without_infobox')
+extracted_pages_dir = dict()
+extracted_pages_dir['fa'] = join(extracted_dir, 'fa_pages')
+extracted_pages_dir['en'] = join(extracted_dir, 'en_pages')
+
+extracted_pages_with_infobox_dir = dict()
+extracted_pages_with_infobox_dir['fa'] = join(extracted_pages_dir['fa'], 'with_infobox')
+extracted_pages_with_infobox_dir['en'] = join(extracted_pages_dir['en'], 'with_infobox')
+
+extracted_pages_without_infobox_dir = dict()
+extracted_pages_without_infobox_dir['fa'] = join(extracted_pages_dir['fa'], 'without_infobox')
+extracted_pages_without_infobox_dir['en'] = join(extracted_pages_dir['en'], 'without_infobox')
+
 
 extracted_redirects_dir = join(extracted_dir, 'redirects')
 extracted_reverse_redirects_dir = join(extracted_dir, 'reverse_redirects')
@@ -91,10 +109,11 @@ extract_bz2_dump_information_parameters = {
     'extract_page_ids': False,
     'extract_revision_ids': False,
     'extract_wiki_texts': False,
-    'extract_pages_infoboxes': False,
+    'extract_pages': False,
+    'extract_infoboxes': False,
     'extract_disambiguations': False,
     'extract_template_names': False,
-    'extracted_template_names_dir': None
+    'lang': None
 }
 
 

@@ -16,21 +16,23 @@ import SqlUtils
 from ThirdParty.WikiCleaner import clean
 
 
-def extract_bz2_dump(input_filename, output_dir):
+def extract_bz2_dump(lang):
+    input_filename = Config.latest_pages_articles_dump[lang]
+    output_dir = Config.extracted_pages_articles_dir[lang]
     DataUtils.create_directory(output_dir, show_logging=True)
     if not os.listdir(output_dir):
         pages_counter = 0
         extracted_pages_filename, extracted_pages_file = DataUtils.open_extracted_bz2_dump_file(pages_counter,
-                                                                                                output_dir)
+                                                                                                output_dir, lang)
 
         for page in DataUtils.get_wikipedia_pages(input_filename):
             extracted_pages_file.write(page)
             pages_counter += 1
-            if pages_counter % Config.extracted_pages_per_file == 0:
+            if pages_counter % Config.extracted_pages_per_file[lang] == 0:
                 LogUtils.logging_pages_extraction(pages_counter, extracted_pages_filename)
                 DataUtils.close_extracted_bz2_dump_file(extracted_pages_filename, extracted_pages_file)
-                extracted_pages_filename, extracted_pages_file = DataUtils.open_extracted_bz2_dump_file(pages_counter,
-                                                                                                        output_dir)
+                extracted_pages_filename, extracted_pages_file = \
+                    DataUtils.open_extracted_bz2_dump_file(pages_counter, output_dir, lang)
 
         LogUtils.logging_pages_extraction(pages_counter, extracted_pages_filename)
         DataUtils.close_extracted_bz2_dump_file(extracted_pages_filename, extracted_pages_file)
@@ -42,10 +44,11 @@ def extract_bz2_dump_information(directory, filename,
                                  extract_page_ids=False,
                                  extract_revision_ids=False,
                                  extract_wiki_texts=False,
-                                 extract_pages_infoboxes=False,
+                                 extract_pages=False,
+                                 extract_infoboxes=False,
                                  extract_disambiguations=False,
                                  extract_template_names=False,
-                                 extracted_template_names_dir=None):
+                                 lang=None):
     abstracts = dict()
     page_ids = dict()
     revision_ids = dict()
@@ -56,13 +59,15 @@ def extract_bz2_dump_information(directory, filename,
     disambiguations = list()
     template_names_list = list()
 
+    extract_pages = extract_pages or extract_abstracts or extract_infoboxes or extract_disambiguations
+
     pages_counter = 0
     input_filename = join(directory, filename)
     for page in DataUtils.get_wikipedia_pages(filename=input_filename):
         parsed_page = DataUtils.parse_page(page)
         pages_counter += 1
 
-        if pages_counter % Config.logging_interval == 0:
+        if pages_counter % Config.logging_interval[lang] == 0:
             LogUtils.logging_information_extraction(pages_counter, input_filename)
             gc.collect()
 
@@ -90,35 +95,28 @@ def extract_bz2_dump_information(directory, filename,
         if extract_wiki_texts:
             wiki_texts[page_name] = text
 
-        wiki_text = str()
-        if extract_abstracts or extract_pages_infoboxes or extract_disambiguations:
+        if extract_pages:
             wiki_text = wtp.parse(text)
-
-        if extract_abstracts:
-            first_section = wiki_text.sections[0]
-            abstract = first_section.string
-
-            if not any(name in abstract for name in Config.redirect_flags)\
-                    and not any(name in page_name for name in Config.disambigution_flags):
-                first_section_templates = first_section.templates
-                for template in first_section_templates:
-                    abstract = abstract.replace(template.string, '').replace('()', '')
-
-                abstract = clean(abstract, specify_wikilinks=False)
-                abstracts[page_name] = abstract
-
-        if extract_pages_infoboxes:
-            page_has_infobox = False
             template_names = wiki_text.templates
+
+            if extract_abstracts:
+                first_section = wiki_text.sections[0]
+                abstract = first_section.string
+
+                if not any(name in abstract for name in Config.redirect_flags)\
+                        and not any(name in page_name for name in Config.disambigution_flags):
+                    first_section_templates = first_section.templates
+                    for template in first_section_templates:
+                        abstract = abstract.replace(template.string, '').replace('()', '')
+
+                    abstract = clean(abstract, specify_wikilinks=False)
+                    abstracts[page_name] = abstract
+
+            page_has_infobox = False
             for template in template_names:
                 template_name, infobox_type = DataUtils.get_infobox_name_type(template.name)
                 if infobox_type:
                     page_has_infobox = True
-                    if template_name not in infoboxes:
-                        infoboxes[template_name] = dict()
-
-                    if page_name not in infoboxes[template_name]:
-                        infoboxes[template_name][page_name] = list()
 
                     if page_name not in pages_with_infobox:
                         pages_with_infobox[page_name] = list()
@@ -126,51 +124,56 @@ def extract_bz2_dump_information(directory, filename,
                     if template_name not in pages_with_infobox[page_name]:
                         pages_with_infobox[page_name].append(template_name)
 
-                    infobox = dict()
-                    for param in template.arguments:
-                        param_name = clean(str(param.name))
-                        param_value = str(param.value).replace('{{سخ}}', '،').replace('{{-}}', '،')
-                        param_value = param_value.replace('<br>', '،').replace('*', '،')
-                        param_value = clean(param_value)
-                        param_value = re.sub(r"\s+", ' ', param_value)
-                        param_value = param_value.replace(' ، ', '،')
-                        only_wiki_links = re.findall(r"http://fa.wikipedia.org/wiki/\S+", param_value)
-                        if ' '.join(only_wiki_links) == param_value:
-                            param_value = param_value.replace(' ', '،')
-                        if ' و '.join(only_wiki_links) == param_value:
-                            param_value = param_value.replace(' و ', '،')
-                        if ' - '.join(only_wiki_links) == param_value:
-                            param_value = param_value.replace(' - ', '،')
-                        if ' / '.join(only_wiki_links) == param_value:
-                            param_value = param_value.replace(' / ', '،')
-                        if param_value:
-                            param_value = re.split(r'\\\\|,|،', param_value)
-                            param_value = [value.strip() for value in param_value]
-                            infobox[param_name] = param_value
+                    if extract_infoboxes:
+                        if template_name not in infoboxes:
+                            infoboxes[template_name] = dict()
 
-                    infoboxes[template_name][page_name].append(infobox)
+                        if page_name not in infoboxes[template_name]:
+                            infoboxes[template_name][page_name] = list()
+
+                        infobox = dict()
+                        for param in template.arguments:
+                            param_name = clean(str(param.name))
+                            param_value = str(param.value).replace('{{سخ}}', '،').replace('{{-}}', '،')
+                            param_value = param_value.replace('<br>', '،').replace('*', '،')
+                            param_value = clean(param_value)
+                            param_value = re.sub(r"\s+", ' ', param_value)
+                            param_value = param_value.replace(' ، ', '،')
+                            only_wiki_links = re.findall(r"http://fa.wikipedia.org/wiki/\S+", param_value)
+                            if ' '.join(only_wiki_links) == param_value:
+                                param_value = param_value.replace(' ', '،')
+                            if ' و '.join(only_wiki_links) == param_value:
+                                param_value = param_value.replace(' و ', '،')
+                            if ' - '.join(only_wiki_links) == param_value:
+                                param_value = param_value.replace(' - ', '،')
+                            if ' / '.join(only_wiki_links) == param_value:
+                                param_value = param_value.replace(' / ', '،')
+                            if param_value:
+                                param_value = re.split(r'\\\\|,|،', param_value)
+                                param_value = [value.strip() for value in param_value]
+                                infobox[param_name] = param_value
+
+                        infoboxes[template_name][page_name].append(infobox)
 
             if not page_has_infobox:
                 pages_without_infobox.append(page_name)
 
-            del template_names
+            if extract_disambiguations:
+                disambiguation_dict = dict()
+                for flag in Config.disambigution_flags:
+                    if any(flag in DataUtils.get_template_name_type(template.name)[0] for template in template_names):
+                        disambiguation_dict['title'] = page_name
+                        disambiguation_dict['field'] = DataUtils.get_disambiguation_links_regular(str(text))
+                        disambiguations.append(disambiguation_dict)
+                        break
+                del template_names
 
-        if extract_disambiguations:
-            disambiguation_dict = dict()
-            template_names = wiki_text.templates
-            for flag in Config.disambigution_flags:
-                if any(flag in DataUtils.get_template_name_type(template.name)[0] for template in template_names):
-                    disambiguation_dict['title'] = page_name
-                    disambiguation_dict['field'] = DataUtils.get_disambiguation_links_regular(str(text))
-                    disambiguations.append(disambiguation_dict)
-                    break
             del template_names
-
-        del wiki_text
+            del wiki_text
 
     if extract_abstracts:
         DataUtils.save_json(Config.extracted_abstracts_dir, filename, abstracts)
-        if extract_pages_infoboxes:
+        if extract_pages:
             DataUtils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_abstracts_filename(filename),
                                 abstracts, filter_dict=pages_with_infobox)
             DataUtils.save_json(Config.extracted_without_infobox_dir, DataUtils.get_abstracts_filename(filename),
@@ -181,7 +184,7 @@ def extract_bz2_dump_information(directory, filename,
 
     if extract_revision_ids:
         DataUtils.save_json(Config.extracted_revision_ids_dir, filename, revision_ids)
-        if extract_pages_infoboxes:
+        if extract_pages:
             DataUtils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_revision_ids_filename(filename),
                                 revision_ids, filter_dict=pages_with_infobox)
             DataUtils.save_json(Config.extracted_without_infobox_dir, DataUtils.get_revision_ids_filename(filename),
@@ -189,39 +192,39 @@ def extract_bz2_dump_information(directory, filename,
 
     if extract_wiki_texts:
         DataUtils.save_json(Config.extracted_wiki_texts_dir, filename, wiki_texts)
-        if extract_pages_infoboxes:
+        if extract_pages:
             DataUtils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_wiki_texts_filename(filename),
                                 wiki_texts, filter_dict=pages_with_infobox)
             DataUtils.save_json(Config.extracted_without_infobox_dir, DataUtils.get_wiki_texts_filename(filename),
                                 wiki_texts, filter_dict=pages_without_infobox)
 
-    if extract_pages_infoboxes:
+    if extract_pages:
+        DataUtils.save_json(Config.extracted_pages_with_infobox_dir[lang], filename, pages_with_infobox)
+        DataUtils.save_json(Config.extracted_pages_without_infobox_dir[lang], filename, pages_without_infobox)
+
+    if extract_infoboxes:
         DataUtils.save_json(Config.extracted_with_infobox_dir, DataUtils.get_infoboxes_filename(filename), infoboxes)
-        DataUtils.save_json(Config.extracted_pages_with_infobox_dir, filename, pages_with_infobox)
-        DataUtils.save_json(Config.extracted_pages_without_infobox_dir, filename, pages_without_infobox)
 
     if extract_disambiguations:
         DataUtils.save_json(Config.extracted_disambiguations_dir, filename, disambiguations)
 
     if extract_template_names:
-        DataUtils.save_json(extracted_template_names_dir, filename, template_names_list)
+        DataUtils.save_json(Config.extracted_template_names_dir[lang], filename, template_names_list)
 
     LogUtils.logging_information_extraction(pages_counter, input_filename)
 
 
 def extract_fawiki_latest_pages_articles_dump():
-    input_filename = Config.fawiki_latest_pages_articles_dump
-    output_dir = Config.extracted_fa_pages_articles_dir
-    extract_bz2_dump(input_filename, output_dir)
+    extract_bz2_dump('fa')
 
 
 def extract_enwiki_latest_pages_articles_dump():
-    input_filename = Config.enwiki_latest_pages_articles_dump
-    output_dir = Config.extracted_en_pages_articles_dir
-    extract_bz2_dump(input_filename, output_dir)
+    extract_bz2_dump('en')
 
 
-def multiprocess_extraction(directory, parameters):
+def multiprocess_extraction(lang, parameters):
+    parameters['lang'] = lang
+    directory = Config.extracted_pages_articles_dir[lang]
     filenames = os.listdir(directory)
     if filenames:
         Parallel(n_jobs=-1)(delayed(extract_bz2_dump_information)(directory, filename, **parameters)
@@ -229,76 +232,77 @@ def multiprocess_extraction(directory, parameters):
 
 
 def extract_fawiki_abstracts():
-    directory = Config.extracted_fa_pages_articles_dir
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
     parameters['extract_abstracts'] = True
-    multiprocess_extraction(directory, parameters)
+    multiprocess_extraction('fa', parameters)
 
 
 def extract_fawiki_page_ids():
-    directory = Config.extracted_fa_pages_articles_dir
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
     parameters['extract_page_ids'] = True
-    multiprocess_extraction(directory, parameters)
+    multiprocess_extraction('fa', parameters)
 
 
 def extract_fawiki_revision_ids():
-    directory = Config.extracted_fa_pages_articles_dir
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
     parameters['extract_revision_ids'] = True
-    multiprocess_extraction(directory, parameters)
+    multiprocess_extraction('fa', parameters)
 
 
 def extract_fawiki_wiki_texts():
-    directory = Config.extracted_fa_pages_articles_dir
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
     parameters['extract_wiki_texts'] = True
-    multiprocess_extraction(directory, parameters)
+    multiprocess_extraction('fa', parameters)
 
 
-def extract_fawiki_pages_infoboxes():
-    directory = Config.extracted_fa_pages_articles_dir
+def extract_fawiki_pages():
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
-    parameters['extract_pages_infoboxes'] = True
-    multiprocess_extraction(directory, parameters)
+    parameters['extract_pages'] = True
+    multiprocess_extraction('fa', parameters)
+
+
+def extract_fawiki_infoboxes():
+    parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
+    parameters['extract_infoboxes'] = True
+    multiprocess_extraction('fa', parameters)
 
 
 def extract_fawiki_disambiguations():
-    directory = Config.extracted_fa_pages_articles_dir
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
     parameters['extract_disambiguations'] = True
-    multiprocess_extraction(directory, parameters)
+    multiprocess_extraction('fa', parameters)
 
 
 def extract_fawiki_template_names():
-    directory = Config.extracted_fa_pages_articles_dir
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
     parameters['extract_template_names'] = True
-    parameters['extracted_template_names_dir'] = Config.extracted_fa_template_names_dir
-    multiprocess_extraction(directory, parameters)
+    multiprocess_extraction('fa', parameters)
+
+
+def extract_enwiki_pages():
+    parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
+    parameters['extract_pages'] = True
+    multiprocess_extraction('en', parameters)
 
 
 def extract_enwiki_template_names():
-    directory = Config.extracted_en_pages_articles_dir
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
     parameters['extract_template_names'] = True
-    parameters['extracted_template_names_dir'] = Config.extracted_en_template_names_dir
-    multiprocess_extraction(directory, parameters)
+    multiprocess_extraction('en', parameters)
 
 
 def extract_fawiki_bz2_dump_information():
     extract_fawiki_latest_pages_articles_dump()
-    directory = Config.extracted_fa_pages_articles_dir
     parameters = copy.deepcopy(Config.extract_bz2_dump_information_parameters)
     parameters['extract_abstracts'] = True
     parameters['extract_page_ids'] = True
     parameters['extract_revision_ids'] = True
     parameters['extract_wiki_texts'] = True
-    parameters['extract_pages_infoboxes'] = True
+    parameters['extract_pages'] = True
+    parameters['extract_infoboxes'] = True
     parameters['extract_disambiguations'] = True
     parameters['extract_template_names'] = True
-    parameters['extracted_template_names_dir'] = Config.extracted_fa_template_names_dir
-    multiprocess_extraction(directory, parameters)
+    multiprocess_extraction('fa', parameters)
 
 
 def extract_page_ids_from_sql_dump():

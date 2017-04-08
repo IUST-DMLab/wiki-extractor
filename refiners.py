@@ -71,9 +71,9 @@ def count_infobox_tuples():
 def count_number_of_each_infobox():
     infobox_counters = dict()
     templates_transcluded = list()
-    pages_with_infobox = os.listdir(Config.extracted_pages_with_infobox_dir)
+    pages_with_infobox = os.listdir(Config.extracted_pages_with_infobox_dir['fa'])
     for filename in pages_with_infobox:
-        pages = DataUtils.load_json(Config.extracted_pages_with_infobox_dir, filename)
+        pages = DataUtils.load_json(Config.extracted_pages_with_infobox_dir['fa'], filename)
         for page in pages:
             for infobox_name in pages[page]:
                 if infobox_name in infobox_counters:

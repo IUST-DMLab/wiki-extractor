@@ -25,8 +25,7 @@ def check_path(my_dict, path_names, page_n):
         r'localhost|'  # localhost...
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
         r'(?::\d+)?'  # optional port
-        r'(?:/?|[/?]\S+)$)'
-        , re.IGNORECASE)
+        r'(?:/?|[/?]\S+)$)', re.IGNORECASE)
 
     pic_prefix = ['jpg', 'tif', 'tiff', 'gif', 'png', 'jpeg', 'svg', 'exif',
                   'bmp', 'ppm', 'pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
@@ -108,4 +107,3 @@ def get_path_name(filename):
 if __name__ == '__main__':
     get_image_name('image_name')
     get_path_name('path_name')
-
