@@ -1,5 +1,5 @@
-from os.path import join, dirname, realpath
 import re
+from os.path import join, dirname, realpath
 
 extracted_pages_per_file = dict()
 extracted_pages_per_file['fa'] = 100000
