@@ -157,30 +157,25 @@ def is_fa_infobox(infobox_name):
     return False
 
 
-def get_fa_infoboxes_per_fa_pages():
-    # find pages in fa dump with fa_flag infoboxes
-    fa_infoboxes_per_pages = defaultdict(list)
-    for filename in os.listdir(Config.extracted_pages_with_infobox_dir['fa']):
-        data = load_json(Config.extracted_pages_with_infobox_dir['fa'], filename)
-        for fa_wiki_page, page_infoboxes in data.items():
-            for infobox in page_infoboxes:
+def get_fawiki_fa_infoboxes():
+    directory = Config.extracted_pages_with_infobox_dir['fa']
+    fawiki_fa_infoboxes = defaultdict(list)
+    for filename in os.listdir(directory):
+        pages_infoboxes = load_json(directory, filename)
+        for page_name, infoboxes in pages_infoboxes.items():
+            for infobox in infoboxes:
                 if is_fa_infobox(infobox):
-                    fa_infoboxes_per_pages[fa_wiki_page].append(infobox)
-    return fa_infoboxes_per_pages
+                    fawiki_fa_infoboxes[page_name].append(infobox)
+    return fawiki_fa_infoboxes
 
 
-def get_fa_infoboxes_per_en_pages():
-    # find en pages of fa pages from langlinks
-    en_lang_links = load_json(Config.extracted_lang_links_dir, Config.extracted_en_lang_link_filename)
-    fa_infoboxes_per_fa_pages = get_fa_infoboxes_per_fa_pages()
-    fa_infoboxes_per_en_pages = defaultdict(list)
-    for fa_page_name, infoboxes in fa_infoboxes_per_fa_pages.items():
-        fa_page_name = fa_page_name.replace(' ', '_')
-        if fa_page_name in en_lang_links:
-            en_page_name = en_lang_links[fa_page_name]
-            fa_infoboxes_per_en_pages[en_page_name].extend(infoboxes)
+def get_enwiki_infoboxes():
+    directory = Config.extracted_pages_with_infobox_dir['en']
+    enwiki_infoboxes = defaultdict(list)
+    for filename in os.listdir(directory):
+        enwiki_infoboxes.update(load_json(directory, filename))
 
-    return fa_infoboxes_per_en_pages
+    return enwiki_infoboxes
 
 
 def detect_language(s):

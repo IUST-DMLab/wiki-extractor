@@ -131,6 +131,27 @@ def template_redirect_with_fa():
     DataUtils.save_json(Config.extracted_redirects_dir, '10-redirects-with-fa', with_fa_redirects)
 
 
+def get_fa_en_infobox_mapping():
+    fa_en_infobox_mapping = defaultdict(list)
+
+    en_lang_links = DataUtils.load_json(Config.extracted_lang_links_dir, Config.extracted_en_lang_link_filename)
+    fawiki_fa_infoboxes = DataUtils.get_fawiki_fa_infoboxes()
+    enwiki_infoboxes = DataUtils.get_enwiki_infoboxes()
+
+    for fa_page_name, fa_infoboxes in fawiki_fa_infoboxes.items():
+        fa_page_name = fa_page_name.replace(' ', '_')
+        if fa_page_name in en_lang_links:
+            en_page_name = en_lang_links[fa_page_name]
+            if en_page_name in enwiki_infoboxes:
+                en_infoboxes = enwiki_infoboxes[en_page_name]
+                for fa_infobox in fa_infoboxes:
+                    for en_infobox in en_infoboxes:
+                        if en_infobox not in fa_en_infobox_mapping[fa_infobox]:
+                            fa_en_infobox_mapping[fa_infobox].append(en_infobox)
+
+    DataUtils.save_json(Config.infobox_mapping_dir, Config.infobox_mapping_filename, fa_en_infobox_mapping)
+
+
 def mapping_sql():
     table_name = Config.wiki_template_mapping_table_name
     table_structure = Config.wiki_template_mapping_table_structure
@@ -147,7 +168,7 @@ def mapping_sql():
     SqlUtils.execute_command_mysql(command)
 
     redirect_data = DataUtils.load_json(Config.extracted_redirects_dir, '10-redirects-with-fa')
-    mapping_data = DataUtils.load_json(Config.extracted_infobox_mapping_dir, Config.extracted_infobox_mapping_filename)
+    mapping_data = DataUtils.load_json(Config.infobox_mapping_dir, Config.infobox_mapping_filename)
 
     for redirect_from, redirects in redirect_data.items():
         for redirect_to in redirects:

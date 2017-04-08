@@ -46,9 +46,6 @@ extracted_template_names_dir = dict()
 extracted_template_names_dir['fa'] = join(extracted_dir, 'fa_template_names')
 extracted_template_names_dir['en'] = join(extracted_dir, 'en_template_names')
 
-extracted_infobox_mapping_dir = join(extracted_dir, 'infobox_mapping')
-extracted_infobox_mapping_filename = 'mappings'
-
 extracted_lang_links_dir = join(extracted_dir, 'lang_links')
 extracted_en_lang_link_filename = 'en'
 extracted_ar_lang_link_filename = 'ar'
@@ -86,6 +83,8 @@ reorganized_infoboxes_dir = join(refined_dir, 'infoboxes')
 final_tuples_dir = join(refined_dir, 'tuples')
 infobox_counters_dir = join(refined_dir, 'infobox_counters')
 infobox_predicates_dir = join(refined_dir, 'infobox_predicates')
+infobox_mapping_dir = join(refined_dir, 'infobox_mapping')
+infobox_mapping_filename = 'mappings'
 
 
 infobox_flags_en = sorted(['reactionbox', 'ionbox', 'infobox', 'taxobox', 'drugbox', 'geobox', 'planetbox', 'chembox',
