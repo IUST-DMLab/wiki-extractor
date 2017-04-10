@@ -32,8 +32,16 @@ def is_infobox_file(filename):
     return True if 'infoboxes' in filename else False
 
 
+def get_infoboxes_filenames(directory):
+    return sorted([filename for filename in os.listdir(directory) if is_infobox_file(filename)])
+
+
 def is_revision_ids_file(filename):
     return True if 'revision_ids' in filename else False
+
+
+def get_revision_ids_filenames(directory):
+    return sorted([filename for filename in os.listdir(directory) if is_revision_ids_file(filename)])
 
 
 def get_infoboxes_filename(prefix):
@@ -235,3 +243,17 @@ def get_disambiguation_links_regular(sentences):
             disambiguation_links.append(sentence[start_index+2:end_index])
 
     return disambiguation_links
+
+
+def is_url(value):
+    url_match = Config.url_regex.match(value)
+    image_match = any(s in value.lower() for s in Config.images_extensions)
+    wiki_links_match = 'http://fa.wikipedia.org/wiki/' in value
+    if not(str(url_match) == 'None') and not image_match and not wiki_links_match:
+        return True
+
+    return False
+
+
+def is_image(value):
+    return any(s in value.lower() for s in Config.images_extensions)

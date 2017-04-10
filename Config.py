@@ -75,8 +75,6 @@ extracted_wiki_texts_dir = join(extracted_dir, 'wiki_texts')
 
 extracted_with_infobox_dir = join(extracted_dir, 'with_infobox')
 extracted_without_infobox_dir = join(extracted_dir, 'without_infobox')
-extracted_path_name_dir = join(extracted_dir, 'path')
-extracted_image_name_dir = join(extracted_dir, 'image')
 
 
 reorganized_infoboxes_dir = join(refined_dir, 'infoboxes')
@@ -85,6 +83,10 @@ infobox_counters_dir = join(refined_dir, 'infobox_counters')
 infobox_predicates_dir = join(refined_dir, 'infobox_predicates')
 infobox_mapping_dir = join(refined_dir, 'infobox_mapping')
 infobox_mapping_filename = 'mappings'
+infobox_properties_with_url_dir = join(refined_dir, 'properties_with_url')
+infobox_properties_with_url_filename = 'properties_with_url'
+infobox_properties_with_images_dir = join(refined_dir, 'properties_with_images')
+infobox_properties_with_images_filename = 'properties_with_images'
 
 
 infobox_flags_en = sorted(['reactionbox', 'ionbox', 'infobox', 'taxobox', 'drugbox', 'geobox', 'planetbox', 'chembox',
@@ -148,5 +150,26 @@ wiki_template_mapping_key_order = ['id', 'template_name_fa', 'template_name_en',
 wiki_template_mapping_primary_keys = ['id']
 wiki_template_mapping_unique_keys = {'template_name_en_fa': ['template_name_fa', 'template_name_en']}
 
+wiki_en_templates_table_name = 'wiki_en_templates'
+wiki_en_templates_table_structure = {
+    'id': 'int(10) NOT NULL AUTO_INCREMENT',
+    'template_name': 'varchar(250)',
+    'type': 'varchar(250)',
+    'language_name': 'varchar(250)'
+}
+wiki_en_templates_key_order = ['id', 'template_name', 'type', 'language_name']
+wiki_en_templates_primary_key = ['id']
+
+
+images_extensions = ['jpg', 'tif', 'tiff', 'gif', 'png', 'jpeg', 'svg', 'exif',
+                     'bmp', 'ppm', 'pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
 
 disambiguation_regex = re.compile(r'(?:^\* *\[\[.+?\]\])')
+
+url_regex = re.compile(
+    r'(?:^(?:http|ftp)s?://'  # http:// or https://
+    r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+    r'localhost|'  # localhost...
+    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+    r'(?::\d+)?'  # optional port
+    r'(?:/?|[/?]\S+)$)', re.IGNORECASE)

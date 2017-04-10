@@ -1,7 +1,5 @@
 import json
-import operator
 import os
-import re
 from collections import OrderedDict, defaultdict
 from os.path import join
 
@@ -13,7 +11,7 @@ import SqlUtils
 def reorganize_infoboxes():
     reorganized_infoboxes = dict()
     directory = Config.extracted_with_infobox_dir
-    filenames = [filename for filename in os.listdir(directory) if DataUtils.is_infobox_file(filename)]
+    filenames = DataUtils.get_infoboxes_filenames(directory)
     for filename in filenames:
         infoboxes = DataUtils.load_json(directory, filename)
         for infobox_name in infoboxes:
@@ -35,10 +33,8 @@ def reorganize_infoboxes():
 
 def build_infobox_tuples():
     directory = Config.extracted_with_infobox_dir
-    infoboxes_filenames = sorted([filename for filename in os.listdir(directory)
-                                  if DataUtils.is_infobox_file(filename)])
-    revision_ids_filenames = sorted([filename for filename in os.listdir(directory)
-                                     if DataUtils.is_revision_ids_file(filename)])
+    infoboxes_filenames = DataUtils.get_infoboxes_filenames(directory)
+    revision_ids_filenames = DataUtils.get_revision_ids_filenames(directory)
     for infobox_filename, revision_ids_filename in zip(infoboxes_filenames, revision_ids_filenames):
         tuples = list()
         infoboxes = DataUtils.load_json(directory, infobox_filename)
@@ -102,7 +98,7 @@ def count_number_of_each_infobox():
 def aggregate_infobox_properties():
     properties = dict()
     directory = Config.extracted_with_infobox_dir
-    infoboxes_filenames = [filename for filename in os.listdir(directory) if DataUtils.is_infobox_file(filename)]
+    infoboxes_filenames = DataUtils.get_infoboxes_filenames(directory)
     for infoboxes_filename in infoboxes_filenames:
         infoboxes = DataUtils.load_json(directory, infoboxes_filename)
         for infobox_name in infoboxes:
@@ -138,6 +134,37 @@ def get_fa_en_infobox_mapping():
                             fa_en_infobox_mapping[fa_infobox].append(en_infobox)
 
     DataUtils.save_json(Config.infobox_mapping_dir, Config.infobox_mapping_filename, fa_en_infobox_mapping)
+
+
+def find_properties_with_url_images():
+    properties_with_url = dict()
+    properties_with_images = dict()
+    directory = Config.extracted_with_infobox_dir
+    filenames = DataUtils.get_infoboxes_filenames(directory)
+    for filename in filenames:
+        infoboxes = DataUtils.load_json(directory, filename)
+        for infobox_name in infoboxes:
+            for page_name in infoboxes[infobox_name]:
+                for infobox in infoboxes[infobox_name][page_name]:
+                    for predicate, values in infobox.items():
+                        value = values[0]
+                        if DataUtils.is_url(value):
+                            if predicate in properties_with_url:
+                                properties_with_url[predicate] += 1
+                            else:
+                                properties_with_url[predicate] = 1
+                        if DataUtils.is_image(value):
+                            if predicate in properties_with_images:
+                                properties_with_images[predicate] += 1
+                            else:
+                                properties_with_images[predicate] = 1
+
+    DataUtils.save_json(Config.infobox_properties_with_url_dir, Config.infobox_properties_with_url_filename,
+                        OrderedDict(sorted(properties_with_url.items(), key=lambda item: item[1], reverse=True)),
+                        sort_keys=False)
+    DataUtils.save_json(Config.infobox_properties_with_images_dir, Config.infobox_properties_with_images_filename,
+                        OrderedDict(sorted(properties_with_images.items(), key=lambda item: item[1], reverse=True)),
+                        sort_keys=False)
 
 
 def template_redirect_with_fa():
@@ -191,138 +218,23 @@ def mapping_sql():
             SqlUtils.execute_command_mysql(query)
 
 
-def get_file_list_from_dir(dir_name):
+def create_table_mysql_template():
+    directory = Config.extracted_template_names_dir['en']
+    template_names_filenames = os.listdir(directory)
+    table_name = Config.wiki_en_templates_table_name
 
-    file_list = []
-    for root, dirs, file_name in os.walk(dir_name):
-        for filename in file_name:
-            real_path = os.path.join(root, filename)
-            file_list.append(real_path)
-    return file_list
-
-
-def create_table_mysql_template(table_name, dir_path):
-
-    main_list = get_file_list_from_dir(dir_path)
-
-    table_structure = OrderedDict([('id', 'int(10) NOT NULL AUTO_INCREMENT'), ('template_name', 'varchar(250)'),
-                                   ('type', 'varchar(250)'), ('language_name', 'varchar(250)')])
-
+    table_structure = SqlUtils.create_order_structure(Config.wiki_en_templates_table_structure,
+                                                      Config.wiki_en_templates_key_order)
+    primary_key = Config.wiki_en_templates_primary_key
     insert_columns = ['template_name', 'type', 'language_name']
 
-    primary_key = ['id']
+    command = SqlUtils.sql_create_table_command_generator(table_name, table_structure,
+                                                          primary_key=primary_key, drop_table=True)
 
-    command = SqlUtils.sql_create_table_command_generator(table_name, table_structure, primary_key,
-                                                          drop_table=True)
+    SqlUtils.execute_command_mysql(command)
 
-    message = 'some exception occur while insert table wiki_farsi_templates'
-    SqlUtils.execute_command_mysql(command, message)
+    for filename in template_names_filenames:
+        my_row = DataUtils.load_json(directory, filename)
 
-    command = ""
-    count = 0
-    for my_id, dstFile in enumerate(main_list):
-
-        count += 1
-        message = 'some exception occur in file ' + str(count)
-        print('file number '+dstFile+' write \n')
-
-        mapping_infobox = open(dstFile)
-        my_row = json.load(mapping_infobox)
-
-        command += SqlUtils.insert_command(table_structure, table_name, insert_columns, my_row)
-        SqlUtils.execute_command_mysql(command, message)
-
-        command = ""
-
-
-def check_path(my_dict, path_names, page_n):
-
-    regex = re.compile(
-        r'(?:^(?:http|ftp)s?://'  # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
-        r'localhost|'  # localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-        r'(?::\d+)?'  # optional port
-        r'(?:/?|[/?]\S+)$)', re.IGNORECASE)
-
-    pic_prefix = ['jpg', 'tif', 'tiff', 'gif', 'png', 'jpeg', 'svg', 'exif',
-                  'bmp', 'ppm', 'pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
-
-    for myKey in my_dict:
-
-        my_value = my_dict[myKey]
-        if isinstance(my_value, dict):
-            check_path(my_value, path_names, page_n)
-        else:
-            result = regex.match(my_value)
-            if not(str(result) == 'None'):
-                if not (any(s in my_value.lower() for s in pic_prefix)):
-                    if myKey in path_names.keys():
-                        count = path_names[myKey][0]
-                        my_word = [(count + 1), my_value]
-                        path_names[myKey] = my_word
-
-                    else:
-                        my_word = [1, my_value]
-                        path_names[myKey] = my_word
-
-
-def check_image(my_dict, image_names, page_n):
-
-    pic_prefix = ['jpg', 'tif', 'tiff', 'gif', 'png', 'jpeg', 'svg', 'exif',
-                  'bmp', 'ppm', 'pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
-
-    for my_Key in my_dict:
-        my_value = my_dict[my_Key]
-        if isinstance(my_value, dict):
-            check_image(my_value, image_names, page_n)
-        else:
-
-            for s in pic_prefix:
-                if s in my_value.lower():
-
-                    if my_Key in image_names.keys():
-                        count = image_names[my_Key]
-                        image_names[my_Key] = count + 1
-                    else:
-                        image_names[my_Key] = 1
-                    break
-
-
-def get_attribute_name(attribute_type):
-
-    dir_path = Config.extracted_dir + '/infoboxes'
-    main_list = get_file_list_from_dir(dir_path)
-
-    attribute_names = {}
-
-    for my_id, dstFile in enumerate(main_list):
-
-        infobox = open(dstFile)
-        data = json.load(infobox)
-
-        for page_title, pageInfo in data.items():
-            if attribute_type == 'image':
-                check_image(pageInfo, attribute_names, page_title)
-            else:
-                check_path(pageInfo, attribute_names, page_title)
-
-    return attribute_names
-
-
-def get_image_name(filename):
-    att_name = get_attribute_name('image')
-    sorted_image_names = sorted(att_name.items(), key=operator.itemgetter(1), reverse=True)
-    DataUtils.save_json(Config.extracted_image_name_dir, filename, sorted_image_names)
-
-
-def get_path_name(filename):
-    att_name = get_attribute_name('path')
-    sorted_path_names = sorted(att_name.items(), key=lambda i: i[1][0], reverse=True)
-    DataUtils.save_json(Config.extracted_path_name_dir, filename, sorted_path_names)
-
-
-if __name__ == '__main__':
-    create_table_mysql_template('wiki_en_templates', Config.extracted_template_names_dir['en'])
-    get_image_name('image_name')
-    get_path_name('path_name')
+        command = SqlUtils.insert_command(table_structure, table_name, insert_columns, my_row)
+        SqlUtils.execute_command_mysql(command)
