@@ -128,6 +128,8 @@ def find_sequence_property():
                         if DataUtils.contains_digits(predicate)\
                                 and predicate not in infobox_properties_map[infobox_name]:
                             infobox_properties_map[infobox_name].append(predicate)
+    for infobox_name in infobox_properties_map:
+        infobox_properties_map[infobox_name] = sorted(infobox_properties_map[infobox_name])
 
     DataUtils.save_json(Config.infobox_predicates_dir, 'infobox_predicates_with_digits', infobox_properties_map)
 
