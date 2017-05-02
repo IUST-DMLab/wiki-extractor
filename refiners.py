@@ -115,6 +115,23 @@ def aggregate_infobox_properties():
                         sort_keys=False)
 
 
+def find_sequence_property():
+    infobox_properties_map = defaultdict(list)
+    directory = Config.extracted_with_infobox_dir
+    infoboxes_filenames = DataUtils.get_infoboxes_filenames(directory)
+    for infoboxes_filename in infoboxes_filenames:
+        infoboxes = DataUtils.load_json(directory, infoboxes_filename)
+        for infobox_name in infoboxes:
+            for page_name in infoboxes[infobox_name]:
+                for infobox in infoboxes[infobox_name][page_name]:
+                    for predicate in infobox:
+                        if DataUtils.contains_digits(predicate)\
+                                and predicate not in infobox_properties_map[infobox_name]:
+                            infobox_properties_map[infobox_name].append(predicate)
+
+    DataUtils.save_json(Config.infobox_predicates_dir, 'infobox_predicates_with_digits', infobox_properties_map)
+
+
 def get_fa_en_infobox_mapping():
     fa_en_infobox_mapping = defaultdict(list)
 

@@ -3,7 +3,7 @@ import refiners
 
 
 def main():
-    pass
+    refiners.find_sequence_property()
 
 
 if __name__ == '__main__':

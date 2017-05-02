@@ -257,3 +257,7 @@ def is_url(value):
 
 def is_image(value):
     return any(s in value.lower() for s in Config.images_extensions)
+
+
+def contains_digits(d):
+    return bool(Config.digits_pattern.search(d))

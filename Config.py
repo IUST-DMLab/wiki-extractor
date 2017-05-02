@@ -173,3 +173,5 @@ url_regex = re.compile(
     r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
     r'(?::\d+)?'  # optional port
     r'(?:/?|[/?]\S+)$)', re.IGNORECASE)
+
+digits_pattern = re.compile('\d')
