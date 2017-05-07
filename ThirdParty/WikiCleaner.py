@@ -3,7 +3,7 @@ from html.entities import name2codepoint
 from .CleanerConfig import *
 
 
-def dropSpans(spans, text):
+def drop_spans(spans, text):
     """
     Drop from text the blocks identified in :param spans:, possibly nested.
     """
@@ -19,39 +19,39 @@ def dropSpans(spans, text):
     return res
 
 
-def dropNested(text, openDelim, closeDelim):
+def drop_nested(text, open_delim, close_delim):
     """
     A matching function for nested expressions, e.g. namespaces and tables.
     """
-    openRE = re.compile(openDelim, re.IGNORECASE)
-    closeRE = re.compile(closeDelim, re.IGNORECASE)
+    open_re = re.compile(open_delim, re.IGNORECASE)
+    close_re = re.compile(close_delim, re.IGNORECASE)
     # partition text in separate blocks { } { }
     spans = []                  # pairs (s, e) for each partition
     nest = 0                    # nesting level
-    start = openRE.search(text, 0)
+    start = open_re.search(text, 0)
     if not start:
         return text
-    end = closeRE.search(text, start.end())
-    next = start
+    end = close_re.search(text, start.end())
+    next_ = start
     while end:
-        next = openRE.search(text, next.end())
-        if not next:            # termination
+        next_ = open_re.search(text, next_.end())
+        if not next_:            # termination
             while nest:         # close all pending
                 nest -= 1
-                end0 = closeRE.search(text, end.end())
+                end0 = close_re.search(text, end.end())
                 if end0:
                     end = end0
                 else:
                     break
             spans.append((start.start(), end.end()))
             break
-        while end.end() < next.start():
+        while end.end() < next_.start():
             # { } {
             if nest:
                 nest -= 1
                 # try closing more
                 last = end.end()
-                end = closeRE.search(text, end.end())
+                end = close_re.search(text, end.end())
                 if not end:     # unbalanced
                     if spans:
                         span = (spans[0][0], last)
@@ -62,14 +62,14 @@ def dropNested(text, openDelim, closeDelim):
             else:
                 spans.append((start.start(), end.end()))
                 # advance start, find next close
-                start = next
-                end = closeRE.search(text, next.end())
+                start = next_
+                end = close_re.search(text, next_.end())
                 break           # { }
-        if next != start:
+        if next_ != start:
             # { { }
             nest += 1
     # collect text outside partitions
-    return dropSpans(spans, text)
+    return drop_spans(spans, text)
 
 
 def unescape(text):
@@ -81,18 +81,18 @@ def unescape(text):
     """
 
     def fixup(m):
-        text = m.group(0)
+        text_ = m.group(0)
         code = m.group(1)
         try:
-            if text[1] == "#":  # character reference
-                if text[2] == "x":
+            if text_[1] == "#":  # character reference
+                if text_[2] == "x":
                     return chr(int(code[1:], 16))
                 else:
                     return chr(int(code))
             else:  # named entity
                 return chr(name2codepoint[code])
         except:
-            return text  # leave as is
+            return text_  # leave as is
 
     return re.sub("&#?(\w+);", fixup, text)
 
@@ -100,53 +100,57 @@ def unescape(text):
 def transform1(text):
     """Transform text not containing <nowiki>"""
     # Drop transclusions (template, parser functions)
-    text = dropNested(text, r'{{', r'}}')
+    text = drop_nested(text, r'{{', r'}}')
     return text
 
 
-def findBalanced(text, openDelim=['[['], closeDelim=[']]']):
+def find_balanced(text_, open_delimeter='[[', close_delimeter=']]'):
     """
     Assuming that text contains a properly balanced expression using
-    :param openDelim: as opening delimiters and
-    :param closeDelim: as closing delimiters.
+    :param text_
+    :param open_delimeter: as opening delimiters and
+    :param close_delimeter: as closing delimiters.
     :return: an iterator producing pairs (start, end) of start and end
     positions in text containing a balanced expression.
     """
-    openPat = '|'.join([re.escape(x) for x in openDelim])
+    open_delim = list()
+    open_delim.append(open_delimeter)
+    close_delim = list()
+    close_delim.append(close_delimeter)
+    open_pat = '|'.join([re.escape(x) for x in open_delim])
     # pattern for delimiters expected after each opening delimiter
-    afterPat = {o: re.compile(openPat + '|' + c, re.DOTALL) for o, c in zip(openDelim, closeDelim)}
+    after_pat = {o: re.compile(open_pat + '|' + c, re.DOTALL) for o, c in zip(open_delim, close_delim)}
     stack = []
     start = 0
     cur = 0
     # end = len(text)
-    startSet = False
-    startPat = re.compile(openPat)
-    nextPat = startPat
+    start_set = False
+    start_pat = re.compile(open_pat)
+    next_pat = start_pat
     while True:
-        next = nextPat.search(text, cur)
-        if not next:
+        next_ = next_pat.search(text_, cur)
+        if not next_:
             return
-        if not startSet:
-            start = next.start()
-            startSet = True
-        delim = next.group(0)
-        if delim in openDelim:
+        if not start_set:
+            start = next_.start()
+            start_set = True
+        delim = next_.group(0)
+        if delim in open_delim:
             stack.append(delim)
-            nextPat = afterPat[delim]
+            next_pat = after_pat[delim]
         else:
-            opening = stack.pop()
             # assert opening == openDelim[closeDelim.index(next.group(0))]
             if stack:
-                nextPat = afterPat[stack[-1]]
+                next_pat = after_pat[stack[-1]]
             else:
-                yield start, next.end()
-                nextPat = startPat
-                start = next.end()
-                startSet = False
-        cur = next.end()
+                yield start, next_.end()
+                next_pat = start_pat
+                start = next_.end()
+                start_set = False
+        cur = next_.end()
 
 
-def makeInternalLink(title, label):
+def make_internal_link(title, label):
     colon = title.find(':')
     if colon > 0 and title[:colon] not in acceptedNamespaces:
         return ''
@@ -158,7 +162,7 @@ def makeInternalLink(title, label):
     return label
 
 
-def replaceInternalLinks(text, specify_wikilinks):
+def replace_internal_links(text, specify_wikilinks):
     """
     Replaces internal links of the form:
     [[title |...|label]]trail
@@ -171,7 +175,7 @@ def replaceInternalLinks(text, specify_wikilinks):
     # triple closing ]]].
     cur = 0
     res = ''
-    for s, e in findBalanced(text):
+    for s, e in find_balanced(text):
         m = tailRE.match(text, e)
         if m:
             trail = m.group(0)
@@ -189,7 +193,7 @@ def replaceInternalLinks(text, specify_wikilinks):
             title = inner[:pipe].rstrip()
             # find last |
             curp = pipe + 1
-            for s1, e1 in findBalanced(inner):
+            for s1, e1 in find_balanced(inner):
                 last = inner.rfind('|', curp, s1)
                 if last >= 0:
                     pipe = last  # advance
@@ -198,12 +202,12 @@ def replaceInternalLinks(text, specify_wikilinks):
         if specify_wikilinks:
             res += text[cur:s] + ' http://fa.wikipedia.org/wiki/' + title.replace(' ', '_') + ' ' + trail
         else:
-            res += text[cur:s] + makeInternalLink(title, label) + trail
+            res += text[cur:s] + make_internal_link(title, label) + trail
         cur = end
     return res + text[cur:]
 
 
-def replaceExternalLinks(text):
+def replace_external_links(text):
     """
     https://www.mediawiki.org/wiki/Help:Links#External_links
     [URL anchor text]
@@ -214,7 +218,6 @@ def replaceExternalLinks(text):
         s += text[cur:m.start()]
         cur = m.end()
 
-        url = m.group(1)
         label = m.group(3)
 
         # # The characters '<' and '>' (which were escaped by
@@ -273,8 +276,8 @@ def wiki2text(text, specify_wikilinks):
 
     # Drop tables
     # first drop residual templates, or else empty parameter |} might look like end of table.
-    text = dropNested(text, r'{{', r'}}')
-    text = dropNested(text, r'{\|', r'\|}')
+    text = drop_nested(text, r'{{', r'}}')
+    text = drop_nested(text, r'{\|', r'\|}')
 
     # Handle bold/italic/quote
     text = bold_italic.sub(r'\1', text)
@@ -286,10 +289,10 @@ def wiki2text(text, specify_wikilinks):
     text = text.replace("'''", '').replace("''", '"')
 
     # replace internal links
-    text = replaceInternalLinks(text, specify_wikilinks)
+    text = replace_internal_links(text, specify_wikilinks)
 
     # replace external links
-    text = replaceExternalLinks(text)
+    text = replace_external_links(text)
 
     # drop MagicWords behavioral switches
     text = magicWordsRE.sub('', text)
@@ -314,8 +317,8 @@ def clean(wikitext, specify_wikilinks=True):
     text = transform(wikitext)
     text = wiki2text(text, specify_wikilinks)
     # Drop discarded elements
-    for tag in discardElements:
-        text = dropNested(text, r'<\s*%s\b[^>/]*>' % tag, r'<\s*/\s*%s>' % tag)
+    for tag_ in discardElements:
+        text = drop_nested(text, r'<\s*%s\b[^>/]*>' % tag_, r'<\s*/\s*%s>' % tag_)
 
     # Collect spans
     spans = []
@@ -330,14 +333,14 @@ def clean(wikitext, specify_wikilinks=True):
             spans.append((m.start(), m.end()))
 
     # Drop ignored tags
-    for left, right in ignored_tag_patterns:
-        for m in left.finditer(text):
+    for left_, right_ in ignored_tag_patterns:
+        for m in left_.finditer(text):
             spans.append((m.start(), m.end()))
-        for m in right.finditer(text):
+        for m in right_.finditer(text):
             spans.append((m.start(), m.end()))
 
     # Bulk remove all spans
-    text = dropSpans(spans, text)
+    text = drop_spans(spans, text)
 
     # Turn into text what is left (&amp;nbsp;) and <syntaxhighlight>
     text = unescape(text)

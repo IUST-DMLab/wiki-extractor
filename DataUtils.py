@@ -56,6 +56,10 @@ def get_wiki_texts_filename(prefix):
     return prefix+'-wiki_texts'
 
 
+def get_texts_filename(prefix):
+    return prefix+'-texts'
+
+
 def get_abstracts_filename(prefix):
     return prefix+'-abstracts'
 

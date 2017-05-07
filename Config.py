@@ -72,6 +72,7 @@ extracted_reverse_redirects_dir = join(extracted_dir, 'reverse_redirects')
 extracted_revision_ids_dir = join(extracted_dir, 'revision_ids')
 extracted_wiki_links_dir = join(extracted_dir, 'wiki_links')
 extracted_wiki_texts_dir = join(extracted_dir, 'wiki_texts')
+extracted_texts_dir = join(extracted_dir, 'texts')
 
 extracted_with_infobox_dir = join(extracted_dir, 'with_infobox')
 extracted_without_infobox_dir = join(extracted_dir, 'without_infobox')
@@ -110,6 +111,7 @@ extract_bz2_dump_information_parameters = {
     'extract_page_ids': False,
     'extract_revision_ids': False,
     'extract_wiki_texts': False,
+    'extract_texts': False,
     'extract_pages': False,
     'extract_infoboxes': False,
     'extract_disambiguations': False,
