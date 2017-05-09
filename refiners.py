@@ -260,7 +260,7 @@ def create_table_mysql_template():
 
 def get_articles_word_count():
     directory = Config.extracted_texts_dir
-    text_filenames = DataUtils.get_infoboxes_filenames(directory)
+    text_filenames = os.listdir(directory)
     article_words_count = dict()
     for filename in text_filenames:
         data = DataUtils.load_json(directory, filename)

@@ -3,7 +3,7 @@ import refiners
 
 
 def main():
-    refiners.find_sequence_property()
+    refiners.get_articles_word_count()
 
 
 if __name__ == '__main__':
