@@ -262,6 +262,8 @@ def get_articles_word_count():
     directory = Config.extracted_texts_dir
     text_filenames = os.listdir(directory)
     article_words_count = dict()
+    farsnet_words = DataUtils.line_to_list(Config.resources_dir, 'words.txt')
+
     for filename in text_filenames:
         data = DataUtils.load_json(directory, filename)
         for page_name, text in data.items():
@@ -270,3 +272,12 @@ def get_articles_word_count():
     DataUtils.save_json(Config.refined_dir, Config.article_word_count_filename,
                         OrderedDict(sorted(article_words_count.items(), key=lambda item: item[1], reverse=True)),
                         sort_keys=False)
+
+    article_words_count_without_farsnet = dict()
+    for key, value in article_words_count.items():
+        if all(word not in key for word in farsnet_words):
+            article_words_count_without_farsnet[key] = value
+
+    DataUtils.save_json(Config.refined_dir, Config.article_word_except_farsnet_count_filename,
+                        OrderedDict(sorted(article_words_count_without_farsnet.items(), key=lambda item: item[1],
+                                           reverse=True)), sort_keys=False)

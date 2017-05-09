@@ -265,3 +265,12 @@ def is_image(value):
 
 def contains_digits(d):
     return bool(Config.digits_pattern.search(d))
+
+
+def line_to_list(directory, filename):
+    input_filename = join(directory, filename)
+    list_of_lines = list()
+    with open(input_filename) as input_file:
+        for line in input_file:
+            list_of_lines.append(line.strip())
+    return list_of_lines
