@@ -256,3 +256,17 @@ def create_table_mysql_template():
 
         command = SqlUtils.insert_command(table_structure, table_name, insert_columns, my_row)
         SqlUtils.execute_command_mysql(command)
+
+
+def get_articles_word_count():
+    directory = Config.extracted_texts_dir
+    text_filenames = DataUtils.get_infoboxes_filenames(directory)
+    article_words_count = dict()
+    for filename in text_filenames:
+        data = DataUtils.load_json(directory, filename)
+        for page_name, text in data.items():
+            article_words_count[page_name] = len(text.split())
+
+    DataUtils.save_json(Config.refined_dir, Config.article_word_count_filename,
+                        OrderedDict(sorted(article_words_count.items(), key=lambda item: item[1], reverse=True)),
+                        sort_keys=False)

@@ -88,7 +88,7 @@ infobox_properties_with_url_dir = join(refined_dir, 'properties_with_url')
 infobox_properties_with_url_filename = 'properties_with_url'
 infobox_properties_with_images_dir = join(refined_dir, 'properties_with_images')
 infobox_properties_with_images_filename = 'properties_with_images'
-
+article_word_count_filename = 'article_word_count'
 
 infobox_flags_en = sorted(['reactionbox', 'ionbox', 'infobox', 'taxobox', 'drugbox', 'geobox', 'planetbox', 'chembox',
                            'starbox', 'drugclassbox', 'speciesbox', 'comiccharacterbox'], key=len, reverse=True)
