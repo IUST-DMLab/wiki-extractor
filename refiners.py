@@ -1,6 +1,7 @@
 import os
 from collections import OrderedDict, defaultdict
 from os.path import join
+import copy
 
 import Config
 import DataUtils
@@ -273,10 +274,10 @@ def get_articles_word_count():
                         OrderedDict(sorted(article_words_count.items(), key=lambda item: item[1], reverse=True)),
                         sort_keys=False)
 
-    article_words_count_without_farsnet = dict()
-    for key, value in article_words_count.items():
-        if all(word not in key for word in farsnet_words):
-            article_words_count_without_farsnet[key] = value
+    article_words_count_without_farsnet = copy.deepcopy(article_words_count)
+    for word in farsnet_words:
+        if word in article_words_count:
+            del article_words_count_without_farsnet[word]
 
     DataUtils.save_json(Config.refined_dir, Config.article_word_except_farsnet_count_filename,
                         OrderedDict(sorted(article_words_count_without_farsnet.items(), key=lambda item: item[1],
