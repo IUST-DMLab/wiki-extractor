@@ -45,15 +45,17 @@ def build_infobox_tuples():
                 for infobox in infoboxes[infobox_name][page_name]:
                     for predicate, values in infobox.items():
                         for value in values:
-                            json_dict = dict()
-                            json_dict['template_name'] = infobox_name
-                            json_dict['template_type'] = infobox_type
-                            json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
-                            json_dict['predicate'] = predicate
-                            json_dict['object'] = value
-                            json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
-                            json_dict['version'] = revision_ids[page_name]
-                            tuples.append(json_dict)
+                            value = value.replace('-', '')
+                            if value:
+                                json_dict = dict()
+                                json_dict['template_name'] = infobox_name
+                                json_dict['template_type'] = infobox_type
+                                json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                                json_dict['predicate'] = predicate
+                                json_dict['object'] = value.strip()
+                                json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                                json_dict['version'] = revision_ids[page_name]
+                                tuples.append(json_dict)
         DataUtils.save_json(Config.final_tuples_dir, infobox_filename, tuples)
 
 
@@ -270,15 +272,18 @@ def get_articles_word_count():
         for page_name, text in data.items():
             article_words_count[page_name] = len(text.split())
 
-    DataUtils.save_json(Config.refined_dir, Config.article_word_count_filename,
-                        OrderedDict(sorted(article_words_count.items(), key=lambda item: item[1], reverse=True)),
-                        sort_keys=False)
+    with open(join(Config.refined_dir, Config.article_word_count_filename), 'w+',
+              encoding='utf8') as article_words_count_file:
+        for article in OrderedDict(sorted(article_words_count.items(), key=lambda item: item[1], reverse=True)):
+            article_words_count_file.write(article + '\n')
 
-    article_words_count_without_farsnet = copy.deepcopy(article_words_count)
+    article_words_count_in_farsnet = dict()
     for word in farsnet_words:
         if word in article_words_count:
-            del article_words_count_without_farsnet[word]
+            article_words_count_in_farsnet[word] = article_words_count[word]
 
-    DataUtils.save_json(Config.refined_dir, Config.article_word_except_farsnet_count_filename,
-                        OrderedDict(sorted(article_words_count_without_farsnet.items(), key=lambda item: item[1],
-                                           reverse=True)), sort_keys=False)
+    with open(join(Config.refined_dir, Config.article_word_in_farsnet_count_filename), 'w+',
+              encoding='utf8') as article_word_in_farsnet_count_file:
+        for article in OrderedDict(sorted(article_words_count_in_farsnet.items(), key=lambda item: item[1],
+                                          reverse=True)):
+            article_word_in_farsnet_count_file.write(article + '\n')

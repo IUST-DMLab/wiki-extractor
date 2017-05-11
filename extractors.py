@@ -116,10 +116,11 @@ def extract_bz2_dump_information(directory, filename,
 
             if extract_texts:
                 text = wiki_text.string
-                templates = wiki_text.templates
-                for template in templates:
-                    text = text.replace(template.string, '').replace('()', '')
-                texts[page_name] = clean(text, specify_wikilinks=False).replace('=', ' ')
+                if not any(name in text for name in Config.redirect_flags):
+                    templates = wiki_text.templates
+                    for template in templates:
+                        text = text.replace(template.string, '').replace('()', '')
+                    texts[page_name] = clean(text, specify_wikilinks=False).replace('=', ' ')
 
             page_has_infobox = False
             for template in template_names:
