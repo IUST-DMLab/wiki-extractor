@@ -1,7 +1,6 @@
 import os
 from collections import OrderedDict, defaultdict
 from os.path import join
-import copy
 
 import Config
 import DataUtils
@@ -44,15 +43,14 @@ def build_infobox_tuples():
             for page_name in infoboxes[infobox_name]:
                 for infobox in infoboxes[infobox_name][page_name]:
                     for predicate, values in infobox.items():
-                        for value in values:
-                            value = value.replace('-', '')
-                            if value:
+                        if len(predicate) < 255:
+                            for value in DataUtils.split_infobox_values(values):
                                 json_dict = dict()
                                 json_dict['template_name'] = infobox_name
                                 json_dict['template_type'] = infobox_type
                                 json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
                                 json_dict['predicate'] = predicate
-                                json_dict['object'] = value.strip()
+                                json_dict['object'] = value
                                 json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
                                 json_dict['version'] = revision_ids[page_name]
                                 tuples.append(json_dict)

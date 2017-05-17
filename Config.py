@@ -178,4 +178,4 @@ url_regex = re.compile(
     r'(?::\d+)?'  # optional port
     r'(?:/?|[/?]\S+)$)', re.IGNORECASE)
 
-digits_pattern = re.compile('\d')
+digits_pattern = re.compile(r'(\d)$')

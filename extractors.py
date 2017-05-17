@@ -2,7 +2,6 @@ import copy
 import gc
 import logging
 import os
-import re
 from collections import defaultdict
 from os.path import join
 
@@ -109,18 +108,16 @@ def extract_bz2_dump_information(directory, filename,
                         and not any(name in page_name for name in Config.disambigution_flags):
                     first_section_templates = first_section.templates
                     for template in first_section_templates:
-                        abstract = abstract.replace(template.string, '').replace('()', '')
+                        abstract = DataUtils.post_clean(abstract.replace(template.string, ''))
 
                     abstract = clean(abstract, specify_wikilinks=False)
                     abstracts[page_name] = abstract
 
             if extract_texts:
-                text = wiki_text.string
-                if not any(name in text for name in Config.redirect_flags):
-                    templates = wiki_text.templates
-                    for template in templates:
-                        text = text.replace(template.string, '').replace('()', '')
-                    texts[page_name] = clean(text, specify_wikilinks=False).replace('=', ' ')
+                if not any(name in wiki_text.string for name in Config.redirect_flags):
+                    texts[page_name] = \
+                        DataUtils.post_clean(clean(DataUtils.pre_clean(
+                            extracted_wiki_text), specify_wikilinks=False), remove_newline=True)
 
             page_has_infobox = False
             for template in template_names:
@@ -144,24 +141,10 @@ def extract_bz2_dump_information(directory, filename,
                         infobox = dict()
                         for param in template.arguments:
                             param_name = clean(str(param.name))
-                            param_value = str(param.value).replace('{{سخ}}', '،').replace('{{-}}', '،')
-                            param_value = param_value.replace('<br>', '،').replace('*', '،')
-                            param_value = clean(param_value)
-                            param_value = re.sub(r"\s+", ' ', param_value)
-                            param_value = param_value.replace(' ، ', '،')
-                            only_wiki_links = re.findall(r"http://fa.wikipedia.org/wiki/\S+", param_value)
-                            if ' '.join(only_wiki_links) == param_value:
-                                param_value = param_value.replace(' ', '،')
-                            if ' و '.join(only_wiki_links) == param_value:
-                                param_value = param_value.replace(' و ', '،')
-                            if ' - '.join(only_wiki_links) == param_value:
-                                param_value = param_value.replace(' - ', '،')
-                            if ' / '.join(only_wiki_links) == param_value:
-                                param_value = param_value.replace(' / ', '،')
+                            param_value = DataUtils.post_clean(clean(
+                                DataUtils.pre_clean(str(param.value))))
                             if param_value:
-                                param_value = re.split(r'\\\\|,|،', param_value)
-                                param_value = [value.strip() for value in param_value]
-                                infobox[param_name] = param_value
+                                infobox[param_name] = DataUtils.pre_clean(str(param.value))
 
                         infoboxes[template_name][page_name].append(infobox)
 
@@ -173,7 +156,8 @@ def extract_bz2_dump_information(directory, filename,
                 for flag in Config.disambigution_flags:
                     if any(flag in DataUtils.get_template_name_type(template.name)[0] for template in template_names):
                         disambiguation_dict['title'] = page_name
-                        disambiguation_dict['field'] = DataUtils.get_disambiguation_links_regular(str(extracted_wiki_text))
+                        disambiguation_dict['field'] = \
+                            DataUtils.get_disambiguation_links_regular(str(extracted_wiki_text))
                         disambiguations.append(disambiguation_dict)
                         break
                 del template_names

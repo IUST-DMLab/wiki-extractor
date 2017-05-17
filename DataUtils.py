@@ -2,6 +2,7 @@ import bz2
 import json
 import logging
 import os
+import re
 import string
 from collections import defaultdict
 from genericpath import exists
@@ -274,3 +275,42 @@ def line_to_list(directory, filename):
         for line in input_file:
             list_of_lines.append(line.strip())
     return list_of_lines
+
+
+def pre_clean(text):
+    text = text.replace('{{سخ}}', '</n>').replace('{{-}}', '</n>').replace('{{•}}', '</n>').replace('{{,}}', '</n>')
+    text = text.replace('{{ـ}}', '').replace('{{·}}', '</n>').replace('<br>', '</n>').replace('<BR>', '</n>')
+    text = text.replace('*', '</n>').replace('{{بر}}', '</n>').replace('{{سرخط}}', '</n>').replace('{{•w}}', '</n>')
+    text = text.replace('{{•بشکن}}', '</n>')
+    text = text.strip('\n\t -_,')
+    return text
+
+
+def post_clean(text, remove_newline=False):
+    text = text.replace('</n>', '\n').replace('"', '').replace('()', '').strip('\n\t -_,')
+    text = re.sub(r"={2,}", '', text).strip()
+    if not remove_newline:
+        text = re.sub(r"\n+", '\n', text)
+    else:
+        text = re.sub(r"\n+", '', text)
+    return text
+
+
+def split_infobox_values(values):
+    splitted_values = list()
+    param_values = post_clean(values)
+    param_values = param_values.split('\n')
+    for param_value in param_values:
+        param_value = clean(param_value)
+        only_wiki_links = re.findall(r"http://fa.wikipedia.org/wiki/\S+", param_value)
+        without_wiki_links = re.sub(r"http://fa.wikipedia.org/wiki/\S+", '', param_value)
+        splitters = set(' ()\\,،./-و')
+        if set(without_wiki_links) <= splitters:
+            for value in only_wiki_links:
+                if value:
+                    splitted_values.append(value)
+        else:
+            param_value = re.sub(r" ?http://fa.wikipedia.org/wiki/(\S+) ?", r'\1', param_value).replace('_', ' ')
+            splitted_values.append(param_value)
+
+    return splitted_values
