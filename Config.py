@@ -88,8 +88,10 @@ infobox_properties_with_url_dir = join(refined_dir, 'properties_with_url')
 infobox_properties_with_url_filename = 'properties_with_url'
 infobox_properties_with_images_dir = join(refined_dir, 'properties_with_images')
 infobox_properties_with_images_filename = 'properties_with_images'
-article_word_count_filename = 'article_word_count'
-article_word_in_farsnet_count_filename = 'article_word_except_farsnet_count'
+article_names_dir = join(refined_dir, 'article_names')
+farsnet_words_filename = 'farsnet_words.txt'
+article_names_filename = 'article_names.txt'
+article_names_in_farsnet_filename = 'article_names_in_farsnet.txt'
 
 
 infobox_flags_en = sorted(['reactionbox', 'ionbox', 'infobox', 'taxobox', 'drugbox', 'geobox', 'planetbox', 'chembox',

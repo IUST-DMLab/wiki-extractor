@@ -259,29 +259,31 @@ def create_table_mysql_template():
         SqlUtils.execute_command_mysql(command)
 
 
-def get_articles_word_count():
+def get_articles_names():
     directory = Config.extracted_texts_dir
     text_filenames = os.listdir(directory)
     article_words_count = dict()
-    farsnet_words = DataUtils.line_to_list(Config.resources_dir, 'words.txt')
+    farsnet_words = DataUtils.line_to_list(Config.resources_dir, Config.farsnet_words_filename)
 
     for filename in text_filenames:
         data = DataUtils.load_json(directory, filename)
         for page_name, text in data.items():
             article_words_count[page_name] = len(text.split())
 
-    with open(join(Config.refined_dir, Config.article_word_count_filename), 'w+',
-              encoding='utf8') as article_words_count_file:
+    DataUtils.create_directory(Config.article_names_dir)
+
+    with open(join(Config.article_names_dir, Config.article_names_filename), 'w+',
+              encoding='utf8') as article_names_file:
         for article in OrderedDict(sorted(article_words_count.items(), key=lambda item: item[1], reverse=True)):
-            article_words_count_file.write(article + '\n')
+            article_names_file.write(article + '\n')
 
     article_words_count_in_farsnet = dict()
     for word in farsnet_words:
         if word in article_words_count:
             article_words_count_in_farsnet[word] = article_words_count[word]
 
-    with open(join(Config.refined_dir, Config.article_word_in_farsnet_count_filename), 'w+',
-              encoding='utf8') as article_word_in_farsnet_count_file:
+    with open(join(Config.article_names_dir, Config.article_names_in_farsnet_filename), 'w+',
+              encoding='utf8') as article_names_in_farsnet_file:
         for article in OrderedDict(sorted(article_words_count_in_farsnet.items(), key=lambda item: item[1],
                                           reverse=True)):
-            article_word_in_farsnet_count_file.write(article + '\n')
+            article_names_in_farsnet_file.write(article + '\n')
