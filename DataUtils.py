@@ -310,7 +310,8 @@ def split_infobox_values(values):
                 if value:
                     splitted_values.append(value)
         else:
-            param_value = re.sub(r"http://fa.wikipedia.org/wiki/(\S+) ?", r'\1', param_value).replace('_', ' ')
+            param_value = re.sub(r"http://fa.wikipedia.org/wiki/(\S+) ?", r'\1 ', param_value).replace('_', ' ')
+            param_value = re.sub(r'\s+', ' ', param_value)
             splitted_values.append(param_value)
 
     return splitted_values
