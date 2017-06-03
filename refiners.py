@@ -1,6 +1,8 @@
 import os
 from collections import OrderedDict, defaultdict
+from hashlib import md5
 from os.path import join
+import re
 
 import Config
 import DataUtils
@@ -45,6 +47,12 @@ def build_infobox_tuples():
                     for predicate, values in infobox.items():
                         if len(predicate) < 255:
                             for value in DataUtils.split_infobox_values(values):
+                                if DataUtils.is_image(value):
+                                    value = re.sub(r"http://fa.wikipedia.org/wiki/(\S+) ?", r'\1', value)\
+                                        .replace('File:', '').replace('پرونده:', '').replace(' ', '_')
+                                    value_md5sum = md5(value.encode('utf8')).hexdigest()
+                                    value = 'http://upload.wikimedia.org/wikipedia/commons/' \
+                                            + value_md5sum[0] + '/' + value_md5sum[:2] + '/' + value
                                 json_dict = dict()
                                 json_dict['template_name'] = infobox_name
                                 json_dict['template_type'] = infobox_type

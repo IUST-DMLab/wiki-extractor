@@ -167,8 +167,8 @@ wiki_en_templates_key_order = ['id', 'template_name', 'type', 'language_name']
 wiki_en_templates_primary_key = ['id']
 
 
-images_extensions = ['jpg', 'tif', 'tiff', 'gif', 'png', 'jpeg', 'svg', 'exif',
-                     'bmp', 'ppm', 'pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
+images_extensions = ['.jpg', '.tif', '.tiff', '.gif', '.png', '.jpeg', '.svg', '.exif',
+                     '.bmp', '.ppm', '.pgm', '.pbm', '.pnm', '.webp', '.heif', '.bat']
 
 disambiguation_regex = re.compile(r'(?:^\* *\[\[.+?\]\])')
 
