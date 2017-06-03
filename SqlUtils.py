@@ -26,7 +26,7 @@ def find_sql_records(line):
     return records
 
 
-def get_sql_rows(file_name, encoding='utf8'):
+def get_sql_rows(file_name, encoding='utf8', quotechar="'"):
     with gzip.open(file_name, 'rt', encoding=encoding, errors='ignore') as f:
         LogUtils.logging_file_opening(file_name)
         for line in f:
@@ -34,7 +34,7 @@ def get_sql_rows(file_name, encoding='utf8'):
                 all_records = find_sql_records(line)
                 for record in all_records:
                     yield csv.reader([record], delimiter=',', doublequote=False,
-                                     escapechar='\\', quotechar="'", strict=True)
+                                     escapechar='\\', quotechar=quotechar, strict=True)
     LogUtils.logging_file_closing(file_name)
 
 

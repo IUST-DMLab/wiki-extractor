@@ -23,6 +23,7 @@ latest_pages_articles_dump['fa'] = join(wikipedia_dumps_dir, 'fawiki-latest-page
 
 fawiki_latest_category_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-categorylinks.sql.gz')
 fawiki_latest_external_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-externallinks.sql.gz')
+fawiki_latest_images_dump = join(wikipedia_dumps_dir, 'fawiki-latest-image.sql.gz')
 fawiki_latest_lang_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-langlinks.sql.gz')
 fawiki_latest_page_dump = join(wikipedia_dumps_dir, 'fawiki-latest-page.sql.gz')
 fawiki_latest_page_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pagelinks.sql.gz')
@@ -68,6 +69,9 @@ extracted_pages_without_infobox_dir['en'] = join(extracted_pages_dir['en'], 'wit
 
 extracted_redirects_dir = join(extracted_dir, 'redirects')
 extracted_reverse_redirects_dir = join(extracted_dir, 'reverse_redirects')
+
+extracted_image_names_types_dir = join(extracted_dir, 'images')
+extracted_image_names_types_filename = 'image_names_types'
 
 extracted_revision_ids_dir = join(extracted_dir, 'revision_ids')
 extracted_wiki_links_dir = join(extracted_dir, 'wiki_links')

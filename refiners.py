@@ -36,6 +36,8 @@ def build_infobox_tuples():
     directory = Config.extracted_with_infobox_dir
     infoboxes_filenames = DataUtils.get_infoboxes_filenames(directory)
     revision_ids_filenames = DataUtils.get_revision_ids_filenames(directory)
+    image_names_types_in_fawiki = DataUtils.load_json(Config.extracted_image_names_types_dir,
+                                                      Config.extracted_image_names_types_filename)
     for infobox_filename, revision_ids_filename in zip(infoboxes_filenames, revision_ids_filenames):
         tuples = list()
         infoboxes = DataUtils.load_json(directory, infobox_filename)
@@ -50,8 +52,9 @@ def build_infobox_tuples():
                                 if DataUtils.is_image(value):
                                     value = re.sub(r"http://fa.wikipedia.org/wiki/(\S+) ?", r'\1', value)\
                                         .replace('File:', '').replace('پرونده:', '').replace(' ', '_')
+                                    image_server = 'fa' if value in image_names_types_in_fawiki else 'commons'
                                     value_md5sum = md5(value.encode('utf8')).hexdigest()
-                                    value = 'http://upload.wikimedia.org/wikipedia/commons/' \
+                                    value = 'http://upload.wikimedia.org/wikipedia/' + image_server + '/' \
                                             + value_md5sum[0] + '/' + value_md5sum[:2] + '/' + value
                                 json_dict = dict()
                                 json_dict['template_name'] = infobox_name

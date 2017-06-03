@@ -377,6 +377,19 @@ def extract_redirects_from_sql_dump():
     SqlUtils.save_sql_dump(Config.extracted_redirects_dir, '10-redirects.sql', sql_dump)
 
 
+def extract_image_names_from_sql_dump():
+    image_names_types = dict()
+
+    all_records = SqlUtils.get_sql_rows(Config.fawiki_latest_images_dump, quotechar='"')
+    for record in all_records:
+        for columns in record:
+            image_name, image_type = columns[0].strip("'"), columns[8].strip("'")
+            image_names_types[image_name] = image_type
+
+    DataUtils.save_json(Config.extracted_image_names_types_dir,
+                        Config.extracted_image_names_types_filename, image_names_types)
+
+
 def extract_category_links_from_sql_dump(page_ids, output_directory, output_filename):
     category_links = defaultdict(list)
 
