@@ -68,6 +68,28 @@ def build_infobox_tuples():
         DataUtils.save_json(Config.final_tuples_dir, infobox_filename, tuples)
 
 
+def build_abstract_tuples():
+    abstracts_directory = Config.extracted_abstracts_dir
+    revision_ids_directory = Config.extracted_revision_ids_dir
+    abstracts_filenames = sorted(os.listdir(abstracts_directory))
+    revision_ids_filenames = sorted(os.listdir(revision_ids_directory))
+    for abstract_filename, revision_ids_filename in zip(abstracts_filenames, revision_ids_filenames):
+        tuples = list()
+        abstracts = DataUtils.load_json(abstracts_directory, abstract_filename)
+        revision_ids = DataUtils.load_json(revision_ids_directory, revision_ids_filename)
+        for page_name in abstracts:
+            json_dict = dict()
+            json_dict['template_name'] = None
+            json_dict['template_type'] = None
+            json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+            json_dict['predicate'] = 'abstract'
+            json_dict['object'] = abstracts[page_name]
+            json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+            json_dict['version'] = revision_ids[page_name]
+            tuples.append(json_dict)
+        DataUtils.save_json(Config.final_abstract_tuples_dir, abstract_filename, tuples)
+
+
 def count_infobox_tuples():
     counter = 0
     direcory = Config.final_tuples_dir
