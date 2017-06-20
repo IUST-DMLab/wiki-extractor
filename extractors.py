@@ -74,11 +74,11 @@ def extract_bz2_dump_information(directory, filename,
 
         if extract_template_names and parsed_page.ns.text == '10':
             template_dict = dict()
-            template_name, template_type, lang = DataUtils.get_template_name_type(parsed_page.title.text)
+            template_name, template_type, language = DataUtils.get_template_name_type(parsed_page.title.text)
 
             template_dict['template_name'] = template_name
             template_dict['type'] = template_type
-            template_dict['language_name'] = lang
+            template_dict['language_name'] = language
             template_names_list.append(template_dict)
 
         if parsed_page.ns.text != '0':
