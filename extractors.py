@@ -160,7 +160,6 @@ def extract_bz2_dump_information(directory, filename,
                             DataUtils.get_disambiguation_links_regular(str(extracted_wiki_text))
                         disambiguations.append(disambiguation_dict)
                         break
-                del template_names
 
             del template_names
             del wiki_text
