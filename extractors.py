@@ -88,6 +88,8 @@ def extract_bz2_dump_information(directory, filename,
         page_id = parsed_page.id.text
         revision_id = parsed_page.revision.id.text
         extracted_wiki_text = parsed_page.revision.find('text').text
+        (parsed_page.revision.find('text').find('ref')).extract()
+        extracted_wiki_text_without_ref_tag = parsed_page.revision.find('text').text
 
         if extract_page_ids:
             page_ids[page_id] = page_name
@@ -98,7 +100,9 @@ def extract_bz2_dump_information(directory, filename,
 
         if extract_pages:
             wiki_text = wtp.parse(extracted_wiki_text)
+            wiki_text_without_ref_tag = wtp.parse(extracted_wiki_text_without_ref_tag)
             template_names = wiki_text.templates
+            template_names_without_ref_tag = wiki_text_without_ref_tag.templates
 
             if extract_abstracts:
                 first_section = wiki_text.sections[0]
@@ -120,7 +124,7 @@ def extract_bz2_dump_information(directory, filename,
                             extracted_wiki_text), specify_wikilinks=False), remove_newline=True)
 
             page_has_infobox = False
-            for template in template_names:
+            for template in template_names_without_ref_tag:
                 template_name, infobox_type = DataUtils.get_infobox_name_type(template.name)
                 if infobox_type:
                     page_has_infobox = True
