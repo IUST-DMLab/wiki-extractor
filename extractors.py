@@ -88,8 +88,12 @@ def extract_bz2_dump_information(directory, filename,
         page_id = parsed_page.id.text
         revision_id = parsed_page.revision.id.text
         extracted_wiki_text = parsed_page.revision.find('text').text
-        (parsed_page.revision.find('text').find('ref')).extract()
-        extracted_wiki_text_without_ref_tag = parsed_page.revision.find('text').text
+        ref_tag = parsed_page.revision.find('text').find('ref')
+        if ref_tag:
+            ref_tag.extract()
+            extracted_wiki_text_without_ref_tag = parsed_page.revision.find('text').text
+        else:
+            extracted_wiki_text_without_ref_tag = extracted_wiki_text
 
         if extract_page_ids:
             page_ids[page_id] = page_name
