@@ -304,7 +304,7 @@ def split_infobox_values(values):
         param_value = clean(param_value)
         only_wiki_links = re.findall(r"http://fa.wikipedia.org/wiki/\S+", param_value)
         without_wiki_links = re.sub(r"http://fa.wikipedia.org/wiki/\S+", '', param_value)
-        splitters = set(' ()\\,،./-و•')
+        splitters = set(' ()\\,،./-و•؟?')
         if set(without_wiki_links) <= splitters:
             for value in only_wiki_links:
                 if value:
