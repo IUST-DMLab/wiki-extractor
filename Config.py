@@ -97,7 +97,11 @@ article_names_dir = join(refined_dir, 'article_names')
 farsnet_words_filename = 'farsnet_words.txt'
 article_names_filename = 'article_names.txt'
 article_names_in_farsnet_filename = 'article_names_in_farsnet.txt'
-
+farsnet_csv = 'farsnet.csv'
+farsnet_csv_unique_id = 'farsnet_unique_id.csv'
+farsnet_unique_ids_words_filename = 'farsnet_unique_ids_words.txt'
+article_names_ids_in_farsnet_json_filename = 'article_names_ids_in_farsnet.json'
+article_names_ids_in_farsnet_csv_filename = 'article_names_ids_in_farsnet.csv'
 
 infobox_flags_en = sorted(['reactionbox', 'ionbox', 'infobox', 'taxobox', 'drugbox', 'geobox', 'planetbox', 'chembox',
                            'starbox', 'drugclassbox', 'speciesbox', 'comiccharacterbox'], key=len, reverse=True)

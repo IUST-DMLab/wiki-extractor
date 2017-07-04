@@ -1,4 +1,5 @@
 import os
+import csv
 from collections import OrderedDict, defaultdict
 from hashlib import md5
 from os.path import join
@@ -292,11 +293,11 @@ def create_table_mysql_template():
         SqlUtils.execute_command_mysql(command)
 
 
-def get_articles_names():
+def get_articles_names(farsnet_words=Config.farsnet_words_filename):
     directory = Config.extracted_texts_dir
     text_filenames = os.listdir(directory)
     article_words_count = dict()
-    farsnet_words = DataUtils.line_to_list(Config.resources_dir, Config.farsnet_words_filename)
+    farsnet_words = DataUtils.line_to_list(Config.resources_dir, farsnet_words)
 
     for filename in text_filenames:
         data = DataUtils.load_json(directory, filename)
@@ -320,3 +321,45 @@ def get_articles_names():
         for article in OrderedDict(sorted(article_words_count_in_farsnet.items(), key=lambda item: item[1],
                                           reverse=True)):
             article_names_in_farsnet_file.write(article + '\n')
+
+
+def remove_duplicate_from_farsnet():
+    input_filename = join(Config.resources_dir, Config.farsnet_csv)
+    output_filename = join(Config.article_names_dir, Config.farsnet_csv_unique_id)
+    farsnet_unique_words = join(Config.article_names_dir, Config.farsnet_unique_ids_words_filename)
+
+    ids = []
+    farsnet_word = list()
+    with open(input_filename, 'r') as input_file, open(output_filename, 'w') as output_file,\
+            open(farsnet_unique_words, 'w') as farsnet_words_file:
+        csv_reader, csv_writer = csv.reader(input_file), csv.writer(output_file)
+        csv_writer.writerow(next(csv_reader))
+        for line in csv_reader:
+            if line[3] not in ids:
+                csv_writer.writerow(line)
+                if line[1] not in farsnet_word:
+                    farsnet_word.append(line[1])
+                ids.append(line[3])
+
+        for word in farsnet_word:
+            farsnet_words_file.write(word)
+            farsnet_words_file.write('\n')
+
+
+def get_farsnet_names_ids():
+    input_filename = join(Config.article_names_dir, Config.farsnet_csv_unique_id)
+    output_filename = join(Config.article_names_dir, Config.article_names_ids_in_farsnet_csv_filename)
+
+    get_articles_names(farsnet_words=Config.farsnet_unique_ids_words_filename)
+    article_names_in_farsnet = DataUtils.line_to_list(Config.article_names_dir,
+                                                      Config.article_names_in_farsnet_filename)
+    names_ids = dict()
+    with open(input_filename, 'r') as input_file, open(output_filename, 'w') as output_file:
+        csv_reader, csv_writer = csv.reader(input_file), csv.writer(output_file)
+        csv_writer.writerow(next(csv_reader))
+        for line in csv_reader:
+            if line[1].strip() in article_names_in_farsnet:
+                csv_writer.writerow(line)
+                names_ids[line[1]] = line[3]
+
+    DataUtils.save_json(Config.article_names_dir, Config.article_names_ids_in_farsnet_json_filename, names_ids)
