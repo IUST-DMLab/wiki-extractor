@@ -363,3 +363,42 @@ def get_farsnet_names_ids():
                 names_ids[line[1]] = line[3]
 
     DataUtils.save_json(Config.article_names_dir, Config.article_names_ids_in_farsnet_json_filename, names_ids)
+
+
+def get_ambiguation_farsnet_word():
+    input_farsnet_unique_id = join(Config.article_names_dir, Config.farsnet_csv_unique_id)
+    output_filename = join(Config.article_names_dir, Config.farsnet_ambiguate_word_filename)
+
+    map_farsnet_list = DataUtils.load_json(Config.article_names_dir, Config.article_names_ids_in_farsnet_json_filename)
+    map_farsnet_list_keys = list(map_farsnet_list.keys())
+
+    write_line = False
+    with open(input_farsnet_unique_id, 'r') as farsnet_unique_id, open(output_filename, 'w') as output_file:
+        csv_reader, csv_writer = csv.reader(farsnet_unique_id), csv.writer(output_file)
+
+        temp_list = ['word','defaultValue','id','senses_snapshot','gloss','example']
+        csv_writer.writerow(temp_list)
+
+        temp_list = []
+        for line in csv_reader:
+            if temp_list and line[0] == temp_list[0]:
+                csv_writer.writerow(temp_list)
+                write_line = True
+            elif write_line:
+                csv_writer.writerow(temp_list)
+                write_line = False
+
+            if line[1].strip() in map_farsnet_list_keys:
+                del temp_list[:]
+                temp_list.append(line[0])
+                temp_list.append(line[1])
+                temp_list.append(line[3])
+                temp_list.append(line[4])
+                temp_list.append(line[5])
+                temp_list.append(line[6])
+
+
+
+
+
+
