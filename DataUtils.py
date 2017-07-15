@@ -287,7 +287,7 @@ def pre_clean(text):
 
 
 def post_clean(text, remove_newline=False):
-    text = text.replace('</n>', '\n').replace('"', '').replace('()', '').strip('\n\t -_,')
+    text = text.replace('"', '').replace('()', '').replace('→', '').strip('\n\t -_,')
     text = re.sub(r"={2,}", '', text).strip()
     if not remove_newline:
         text = re.sub(r"\n+", '\n', text)
@@ -299,19 +299,19 @@ def post_clean(text, remove_newline=False):
 def split_infobox_values(values):
     splitted_values = list()
     param_values = post_clean(values)
-    param_values = param_values.split('\n')
+    param_values = param_values.split('</n>')
     for param_value in param_values:
         param_value = clean(param_value)
         only_wiki_links = re.findall(r"http://fa.wikipedia.org/wiki/\S+", param_value)
         without_wiki_links = re.sub(r"http://fa.wikipedia.org/wiki/\S+", '', param_value)
-        splitters = set(' ()\\,،./-و•؟?')
+        splitters = set(' ()\\,،./-و•؟?%')
         if set(without_wiki_links) <= splitters:
             for value in only_wiki_links:
                 if value:
-                    splitted_values.append(value)
+                    splitted_values.append(post_clean(value, remove_newline=True))
         else:
             param_value = re.sub(r"http://fa.wikipedia.org/wiki/(\S+) ?", r'\1 ', param_value).replace('_', ' ').strip()
             param_value = re.sub(r'\s+', ' ', param_value)
-            splitted_values.append(param_value)
+            splitted_values.append(post_clean(param_value, remove_newline=True))
 
     return splitted_values
