@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 
 import Config
 import LogUtils
-from ThirdParty.WikiCleaner import clean
+from ThirdParty.WikiCleaner import clean, dropNested
 
 
 def open_extracted_bz2_dump_file(extracted_pages_counter, output_dir, lang):
@@ -287,7 +287,7 @@ def pre_clean(text):
 
 
 def post_clean(text, remove_newline=False):
-    text = text.replace('"', '').replace('()', '').replace('→', '').strip('\n\t -_,')
+    text = text.replace('</n>', '\n').replace('"', '').replace('()', '').replace('→', '').strip('\n\t -_,')
     text = re.sub(r"={2,}", '', text).strip()
     if not remove_newline:
         text = re.sub(r"\n+", '\n', text)
@@ -299,7 +299,8 @@ def post_clean(text, remove_newline=False):
 def split_infobox_values(values):
     splitted_values = list()
     param_values = post_clean(values)
-    param_values = param_values.split('</n>')
+    param_values = dropNested(param_values, r'{{', r'}}')
+    param_values = param_values.split('\n')
     for param_value in param_values:
         param_value = clean(param_value)
         only_wiki_links = re.findall(r"http://fa.wikipedia.org/wiki/\S+", param_value)
