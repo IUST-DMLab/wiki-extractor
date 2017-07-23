@@ -8,6 +8,7 @@ import re
 import Config
 import DataUtils
 import SqlUtils
+import hazm
 
 
 def reorganize_infoboxes():
@@ -396,6 +397,131 @@ def get_ambiguation_farsnet_word():
                 temp_list.append(line[4])
                 temp_list.append(line[5])
                 temp_list.append(line[6])
+
+
+def similar(s1, s2):
+    normalizer = hazm.Normalizer()
+    s1 = normalizer.normalize(s1)
+    s2 = normalizer.normalize(s2)
+
+    list_s1 =  [word for word in s1.split(" ") if word not in hazm.stopwords_list()]
+    list_s2 = [word for word in s2.split(" ") if word not in hazm.stopwords_list()]
+
+    stemmer = hazm.Stemmer()
+    stem_s1 = [stemmer.stem(word) for word in list_s1]
+
+    same_words = set.intersection(set(list_s1), set(list_s2))
+    return len(same_words)
+
+
+def get_ambiguaty_abstract():
+    abstract_filename = os.listdir(Config.extracted_texts_dir)
+    input_ambiguate_word_filename = join(Config.article_names_dir, Config.farsnet_ambiguate_word_filename)
+    output_ambiguate_abstract_filename = join(Config.article_names_dir, Config.farsnet_ambiguate_abstract_filename)
+
+    temp_list = []
+    count = 0
+    max_number = 0
+    min_number = 1000
+    normalizer = hazm.Normalizer()
+    with open(output_ambiguate_abstract_filename, 'w') as output_file:
+        csv_writer = csv.writer(output_file)
+        for filename in abstract_filename:
+            # if count == 1:
+            #     break;
+            count += 1
+            print('file ' +str(count)+' is runing ' +filename)
+            dict_abstract = DataUtils.load_json(Config.extracted_texts_dir, filename)
+            for abstract_item in dict_abstract:
+                with open(input_ambiguate_word_filename, 'r') as ambiguate_word:
+                    csv_reader = csv.reader(ambiguate_word)
+
+                    for line in csv_reader:
+                        item = normalizer.normalize(line[1])
+                        if item == abstract_item:
+                            print('find '+line[1]+' in file.')
+                            del temp_list[:]
+                            temp_list.append(line[0])
+                            temp_list.append(normalizer.normalize(line[1]))
+                            temp_list.append(line[2])
+                            temp_list.append(normalizer.normalize(line[3]))
+                            temp_list.append(normalizer.normalize(line[4]))
+                            temp_list.append(normalizer.normalize(line[5]))
+                            temp_list.append(normalizer.normalize(dict_abstract[abstract_item]))
+
+                            sentence_snapshot = str(line[3]).replace(',', ' ').replace('،', ' ') + ' '
+                            gloss_sentence = str(line[4]).replace(',', ' ').replace('،', ' ') + ' '
+                            example = gloss = str(line[5]).replace(',', ' ').replace('،', ' ') + ' '
+                            sentence1 = sentence_snapshot + gloss_sentence + example
+                            sentence2 = str(temp_list[6]).replace(',', ' ').replace('،', ' ').replace('.', ' ')
+
+                            diff = similar(sentence1, sentence2)
+                            if diff > max_number:
+                                max_number = diff
+                            if diff < min_number:
+                                min_number = diff
+                            temp_list.append(diff)
+                            csv_writer.writerow(temp_list)
+
+    return [max_number, min_number]
+
+
+#find pages which are disambiguate in wikipedia
+def find_farsnet_disambiguate_page():
+    input_ambiguate_abstract_filename = join(Config.article_names_dir, Config.farsnet_ambiguate_abstract_filename)
+    disambiguate_filename = os.listdir(Config.extracted_disambiguations_dir)
+    abstract_filename = os.listdir(Config.extracted_texts_dir)
+    output_disambiguate_wiki = join(Config.article_names_dir, Config.farsnet_disambiguate_wiki_filename)
+
+    max_number = 0
+    min_number = 1000
+    with open(output_disambiguate_wiki, 'w') as output_file, open(input_ambiguate_abstract_filename, 'r') as input_file:
+        csv_writer, csv_reader = csv.writer(output_file), csv.reader(input_file)
+
+        for line in csv_reader:
+            for disambiguate_file in disambiguate_filename:
+                list_disambiguate = DataUtils.load_json(Config.extracted_disambiguations_dir, disambiguate_file)
+                # for item in list_disambiguate:
+                #     if line[1] ==item:
+                for item_disambiguate in list_disambiguate:
+                    if line[1] == item_disambiguate['title']:
+                        print(line[1] + ' find in disambiguate page.')
+
+                        for abstract_file in abstract_filename:
+                            list_abstract = DataUtils.load_json(Config.extracted_texts_dir, abstract_file)
+                            for abstract_key in list_abstract:
+
+                                if any(abstract_key == d for d in item_disambiguate['field']):
+
+                                   print('find abstract_key: '+ abstract_key)
+                                   sentence_snapshot = str(line[3]).replace(',', ' ').replace('،', ' ') + ' '
+                                   gloss_sentence = str(line[4]).replace(',', ' ').replace('،', ' ') + ' '
+                                   example = gloss = str(line[5]).replace(',', ' ').replace('،', ' ') + ' '
+                                   sentence1 = sentence_snapshot + gloss_sentence + example
+                                   sentence2 = str(list_abstract[abstract_key]).replace(',', ' ').replace('،', ' ').replace('.', ' ')
+
+                                   diff = similar(sentence1, sentence2)
+                                   if diff > max_number:
+                                       max_number = diff
+                                   if diff < min_number:
+                                       min_number = diff
+                                   csv_writer.writerow(
+                                       [line[0], line[1], line[2], line[3], line[4], line[5], abstract_key, list_abstract[abstract_key], diff])
+
+
+def disambiguate_farsenet(max_number = 1, min_number = 1):
+    input_ambiguate_abstract_filename = DataUtils.join(Config.article_names_dir,
+                                                       Config.farsnet_ambiguate_abstract_filename)
+    output_disambiguate_abstract_filename = DataUtils.join(Config.article_names_dir, Config.farsnet_disambiguate_score)
+
+    with open(input_ambiguate_abstract_filename, 'r') as input_file, \
+            open(output_disambiguate_abstract_filename, 'w') as output_file:
+        csv_reader, csv_writer = csv.reader(input_file), csv.writer(output_file)
+        for line in csv_reader:
+
+            temp_list = []
+            diff = ((float(line[7])- min_number)/(max_number - min_number)) * 10
+            csv_writer.writerow([line[0], line[1], line[2], line[3], line[4], line[5], line[6], round(diff,2)])
 
 
 

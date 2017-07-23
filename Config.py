@@ -94,6 +94,7 @@ infobox_properties_with_url_filename = 'properties_with_url'
 infobox_properties_with_images_dir = join(refined_dir, 'properties_with_images')
 infobox_properties_with_images_filename = 'properties_with_images'
 article_names_dir = join(refined_dir, 'article_names')
+farsnet_ontology = join(refined_dir, 'ontology')
 farsnet_words_filename = 'farsnet_words.txt'
 article_names_filename = 'article_names.txt'
 article_names_in_farsnet_filename = 'article_names_in_farsnet.txt'
@@ -103,6 +104,12 @@ farsnet_unique_ids_words_filename = 'farsnet_unique_ids_words.txt'
 article_names_ids_in_farsnet_json_filename = 'article_names_ids_in_farsnet.json'
 article_names_ids_in_farsnet_csv_filename = 'article_names_ids_in_farsnet.csv'
 farsnet_ambiguate_word_filename = 'farsnet_ambiguate_word.csv'
+farsnet_ambiguate_abstract_filename = 'farsnet_ambiguate_abstract.csv'
+farsnet_disambiguate_wiki_filename = 'farsnet_disambiguate_wiki.csv'
+farsnet_ontology_filename = 'ontology.csv'
+farsnet_disambiguate_score = 'farsnet_disambiguate_score.csv'
+farsnet_map_ontology_filename = 'farsnet_map_ontology.csv'
+farsnet_not_map_ontology_filename = 'farsnet_not_map_ontology.csv'
 
 infobox_flags_en = sorted(['reactionbox', 'ionbox', 'infobox', 'taxobox', 'drugbox', 'geobox', 'planetbox', 'chembox',
                            'starbox', 'drugclassbox', 'speciesbox', 'comiccharacterbox'], key=len, reverse=True)
