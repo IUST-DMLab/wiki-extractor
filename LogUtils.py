@@ -25,3 +25,22 @@ def logging_pages_extraction(pages_number, filename):
 
 def logging_information_extraction(pages_number, filename):
     logging_extraction(pages_number, filename, 'Checked')
+
+
+def logging_warning_read_rss(url):
+    logging.warning('requested url ("%s") is Gone!' % url)
+
+
+def logging_start_wget(url):
+    logging.info('wget  "%s" started' % url)
+
+
+def logging_finish_wget(url):
+    logging.info('wget  "%s" finished' % url)
+
+
+def logging_warning_copy_directory(source):
+    logging.warning('Directory %s not copied' % source)
+
+def logging_copy_directory(source, destination):
+    logging.info('Directory %s copied to %s' % source, destination)

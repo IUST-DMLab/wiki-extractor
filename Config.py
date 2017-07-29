@@ -11,11 +11,14 @@ logging_interval['en'] = 100000
 
 current_dir = dirname(realpath(__file__))
 resources_dir = join(current_dir, 'resources')
+previous_resources_dir = join(current_dir, 'previous_resource')
+update_dir = join(current_dir, 'update')
 
 wikipedia_dumps_dir = join(resources_dir, 'dumps')
 extracted_dir = join(resources_dir, 'extracted')
 refined_dir = join(resources_dir, 'refined')
 
+wiki_rss_etags_filename = 'wiki_rss_etags'
 
 latest_pages_articles_dump = dict()
 latest_pages_articles_dump['en'] = join(wikipedia_dumps_dir, 'enwiki-latest-pages-articles.xml.bz2')
