@@ -43,4 +43,4 @@ def logging_warning_copy_directory(source):
     logging.warning('Directory %s not copied' % source)
 
 def logging_copy_directory(source, destination):
-    logging.info('Directory %s copied to %s' % source, destination)
+    logging.info('Directory %s copied to %s' % (source, destination))

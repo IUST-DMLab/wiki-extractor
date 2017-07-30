@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import string
+import shutil
 from collections import defaultdict
 from genericpath import exists
 from os.path import join
@@ -130,6 +131,35 @@ def create_directory(directory, show_logging=False):
         if show_logging:
             logging.info(' Create All Directories in Path %s' % directory)
         os.makedirs(directory)
+
+
+def copy_directory(source, destination):
+    try:
+        os.system("cp -r %s %s" % (source, destination))
+    except OSError:
+        LogUtils.logging_warning_copy_directory(source)
+        return False
+    return True
+
+
+def delete_directory(directory):
+    if exists(directory):
+        if os.path.islink(directory):
+            os.unlink(directory)
+        else:
+            shutil.rmtree(directory)
+
+
+def rename_directory(source, destination):
+    if exists(source):
+        os.rename(source, destination)
+
+
+def create_symlink(source, symlink):
+    if exists(symlink):
+        delete_directory(symlink)
+        print('deleted')
+    os.symlink(source, symlink)
 
 
 def get_wikipedia_pages(filename):
