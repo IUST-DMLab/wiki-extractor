@@ -25,12 +25,24 @@ DUMP_NAMES = [
         # "fawiki-latest-langlinks.sql.gz"
     ]
 
+# RESULT_DIRECTORIES = [
+    #     Config.extracted_with_infobox_dir, Config.extracted_without_infobox_dir, Config.final_tuples_dir,
+    #     Config.extracted_revision_ids_dir, Config.extracted_redirects_dir, Config.extracted_disambiguations_dir
+    # ]
+
+RESULT_DIRECTORIES = [
+        Config.final_tuples_dir,
+        Config.extracted_disambiguations_dir
+    ]
+
 
 def update():
     is_updated, new_version_dir = rss_reader()
     if is_updated:
+        # logging.info("Extraction process started.")
         # extract_fawiki_bz2_dump_information()
         # logging.info("Extraction process finished.")
+        # logging.info("Refinement Process started.")
         # build_infobox_tuples()
         # logging.info("Refinement Process finished.")
         DataUtils.save_json(Config.extracted_disambiguations_dir, '1.json', {3: 4})
@@ -44,7 +56,6 @@ def update():
             logging.info("Successfully Updated")
         else:
             logging.info("Unsuccessful Update")
-
 
 
 def rss_reader():
@@ -78,15 +89,23 @@ def rss_reader():
     if all(status == HTTPStatus.OK for status in new_update_status.values()):
         logging.info("New wikipedia dump released ....")
         new_version_date = convert_timestamp(new_update_date)
-        news_version_dir = str(new_version_date.year) + '_' + str(new_version_date.month) + '_' + str(
-            new_version_date.day)
+        news_version_dir = make_new_version_dir_name(new_version_date)
         prepare_path()
         # if download_new_dumps(dump_address):
         if True:
             DataUtils.save_json(Config.update_dir, Config.wiki_rss_etags_filename, new_etags)
             return True, news_version_dir
+    if any(status == HTTPStatus.OK for status in new_update_status.values()):
+        logging.info("Some changes detected on wikipedia dump, not fully updated yet.")
+    else:
+        logging.info("No changes detected on wikipedia dump.")
 
     return False, None
+
+
+def make_new_version_dir_name(new_version_date):
+    return str(new_version_date.year) + '_' + str('{:02d}'.format(new_version_date.month)) + '_' + str(
+        '{:02d}'.format(new_version_date.day))
 
 
 def read_update_etags():
@@ -108,11 +127,7 @@ def copy_result(new_version_dir):
     #     Config.extracted_revision_ids_dir, Config.extracted_redirects_dir, Config.extracted_disambiguations_dir
     # ]
 
-    result_directories = [
-        Config.final_tuples_dir,
-        Config.extracted_disambiguations_dir
-    ]
-    for directory in result_directories:
+    for directory in RESULT_DIRECTORIES:
         if not DataUtils.copy_directory(directory, destination_address):
 
             return False
