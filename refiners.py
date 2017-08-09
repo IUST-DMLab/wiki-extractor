@@ -56,6 +56,9 @@ def build_infobox_tuples():
                                         .replace('File:', '').replace('پرونده:', '').replace(' ', '_')
                                     image_server = 'fa' if value in image_names_types_in_fawiki else 'commons'
                                     value_md5sum = md5(value.encode('utf8')).hexdigest()
+                                    if DataUtils.is_tif_image(value):
+                                        image_server += '/thumb'
+                                        value = value + '/1000px-' + value + '.jpg'
                                     value = 'http://upload.wikimedia.org/wikipedia/' + image_server + '/' \
                                             + value_md5sum[0] + '/' + value_md5sum[:2] + '/' + value
                                 json_dict = dict()

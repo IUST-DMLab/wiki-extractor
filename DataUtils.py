@@ -264,6 +264,10 @@ def is_image(value):
     return any(value.lower().endswith(s) for s in Config.images_extensions)
 
 
+def is_tif_image(value):
+    return any(value.lower().endswith(s) for s in ['.tif', '.tiff'])
+
+
 def contains_digits(d):
     return bool(Config.digits_pattern.search(d))
 
