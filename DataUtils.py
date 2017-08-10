@@ -137,7 +137,7 @@ def copy_directory(source, destination):
     try:
         os.system("cp -r %s %s" % (source, destination))
     except OSError:
-        LogUtils.logging_warning_copy_directory(source)
+        LogUtils.logging_warning_copy_directory(source, destination)
         return False
     return True
 
@@ -158,7 +158,6 @@ def rename_directory(source, destination):
 def create_symlink(source, symlink):
     if exists(symlink):
         delete_directory(symlink)
-        print('deleted')
     os.symlink(source, symlink)
 
 
