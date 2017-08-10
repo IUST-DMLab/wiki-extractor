@@ -85,7 +85,7 @@ def rss_reader(force_update):
 
         if d.status == HTTPStatus.OK:
             logging.info('%s RELEASED' % rss_address)
-            dump_addresses.append((BeautifulSoup(d.entries[0].summary, 'html.parser')).find('a')['href'])
+            dump_addresses.append(build_dump_path(dump_name))
             new_update_date = d.modified
 
         elif d.status == HTTPStatus.NOT_MODIFIED:
@@ -169,6 +169,10 @@ def download_new_dumps(dump_addresses):
 
 def build_rss_path(dump_name):
     return WIKI_DUMPS_URL + dump_name + '-rss.xml'
+
+
+def build_dump_path(dump_name):
+    return WIKI_DUMPS_URL + dump_name
 
 
 def convert_timestamp(timestamp):
