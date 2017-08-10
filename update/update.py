@@ -6,7 +6,6 @@ from datetime import datetime
 
 import wget
 import feedparser
-from bs4 import BeautifulSoup
 
 import Config
 import DataUtils
