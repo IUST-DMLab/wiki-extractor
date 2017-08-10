@@ -134,6 +134,7 @@ def create_directory(directory, show_logging=False):
 
 
 def copy_directory(source, destination):
+    # rewrite directory if exist
     try:
         os.system("cp -r %s %s" % (source, destination))
     except OSError:
@@ -150,7 +151,7 @@ def delete_directory(directory):
             shutil.rmtree(directory)
 
 
-def rename_directory(source, destination):
+def rename_file_or_directory(source, destination):
     if exists(source):
         os.rename(source, destination)
 

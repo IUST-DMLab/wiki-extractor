@@ -1,9 +1,10 @@
 import extractors
 import refiners
-import update
+from update import update
+
 
 def main():
-    pass
+    update.start_update(force_update=True)
 
 if __name__ == '__main__':
     main()

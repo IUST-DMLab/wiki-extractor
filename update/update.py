@@ -1,7 +1,8 @@
+import time
+import logging
 from os.path import join
 from http import HTTPStatus
 from datetime import datetime
-import logging
 
 import wget
 import feedparser
@@ -33,26 +34,45 @@ RESULT_DIRECTORIES = [
 DESTINATION_DIR = '/mnt/shared/extractedWikiInfo'
 
 
-def start_update():
-    is_updated, new_version_dir = rss_reader()
+def start_update(force_update=False):
+    """":param force_update: doing update process anyway, without last update etags consideration """
+
+    is_updated, new_version_dir = rss_reader(force_update)
     if is_updated:
-        logging.info("Extraction process started.")
-        extract_fawiki_bz2_dump_information()
-        logging.info("Extraction process finished.")
+        try:
+            logging.info("Extraction process started.")
+            extract_fawiki_bz2_dump_information()
+            logging.info("Extraction process finished.")
 
-        logging.info("Refinement Process started.")
-        build_infobox_tuples()
-        logging.info("Refinement Process finished.")
+            logging.info("Refinement Process started.")
+            build_infobox_tuples()
+            logging.info("Refinement Process finished.")
 
-        if copy_result(new_version_dir):
-            # todo: send request to urls
-            logging.info("Successfully Updated.")
-        else:
+            for i in range(3):
+                if i:
+                    logging.info("Trying copy result again ...")
+
+                if copy_result(new_version_dir):
+                    # todo: send request to urls
+                    logging.info("Successfully Updated.")
+                    return True
+                else:
+                    # time.sleep(60*(i+1)*5)
+                    pass
+
+            revert_previous_etags()
+            logging.warning("Cant copy result directories, please fix the problem or copy results manually.")
             logging.info("Unsuccessful Update!")
 
+        except Exception:
+            revert_previous_etags()
+            logging.warning("Unsuccessful Update!")
 
-def rss_reader():
-    last_etags = load_etags()
+        return False
+
+
+def rss_reader(force_update):
+    last_etags = load_etags(force_update)
     new_etags = dict()
 
     new_update_status = dict()
@@ -100,30 +120,38 @@ def make_new_version_dir_name(new_version_date):
         '{:02d}'.format(new_version_date.day))
 
 
-def load_etags():
+def load_etags(force_update):
+    last_etags = None
     try:
-        etags = DataUtils.load_json(Config.update_dir, Config.wiki_rss_etags_filename)
-        for dump in DUMP_NAMES:
-            if dump not in etags:
-                etags[dump] = ''
+        if force_update:
+            etags = {dump_name: '' for dump_name in DUMP_NAMES}
+        else:
+            last_etags = etags = DataUtils.load_json(Config.update_dir, Config.wiki_rss_etags_filename)
+            for dump in DUMP_NAMES:
+                if dump not in etags:
+                    etags[dump] = ''
 
     except FileNotFoundError:
         etags = {dump_name: '' for dump_name in DUMP_NAMES}
 
-    DataUtils.save_json(Config.update_dir, Config.wiki_rss_etags_filename, etags)
+    if last_etags != etags:
+        DataUtils.rename_file_or_directory(join(Config.update_dir, Config.wiki_rss_etags_filename),
+                                           join(Config.update_dir, Config.previous_wiki_rss_etags_filename))
+        DataUtils.save_json(Config.update_dir, Config.wiki_rss_etags_filename, etags)
     return etags
 
 
 def copy_result(new_version_dir):
+    successful_copy = True
     destination_address = join(DESTINATION_DIR, new_version_dir)
     DataUtils.create_directory(destination_address)
 
     for directory in RESULT_DIRECTORIES:
         if not DataUtils.copy_directory(directory, destination_address):
-            return False
+            successful_copy = False
     logging.info('Result directories successfully copied.')
     DataUtils.create_symlink(destination_address, join(DESTINATION_DIR, 'last'))
-    return True
+    return successful_copy
 
 
 def download_new_dumps(dump_addresses):
@@ -149,5 +177,10 @@ def convert_timestamp(timestamp):
 
 def prepare_path():
     DataUtils.delete_directory(Config.previous_resources_dir)
-    DataUtils.rename_directory(Config.resources_dir, Config.previous_resources_dir)
+    DataUtils.rename_file_or_directory(Config.resources_dir, Config.previous_resources_dir)
     DataUtils.create_directory(Config.resources_dir)
+
+
+def revert_previous_etags():
+    previous_etags = DataUtils.load_json(Config.update_dir, Config.previous_wiki_rss_etags_filename)
+    DataUtils.save_json(Config.update_dir, Config.wiki_rss_etags_filename, previous_etags)

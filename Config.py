@@ -18,7 +18,8 @@ wikipedia_dumps_dir = join(resources_dir, 'dumps')
 extracted_dir = join(resources_dir, 'extracted')
 refined_dir = join(resources_dir, 'refined')
 
-wiki_rss_etags_filename = 'wiki_rss_etags'
+wiki_rss_etags_filename = 'wiki_rss_etags.json'
+previous_wiki_rss_etags_filename = 'previous_wiki_rss_etags.json'
 
 latest_pages_articles_dump = dict()
 latest_pages_articles_dump['en'] = join(wikipedia_dumps_dir, 'enwiki-latest-pages-articles.xml.bz2')
