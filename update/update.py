@@ -11,7 +11,7 @@ import Config
 import DataUtils
 import LogUtils
 from refiners import build_infobox_tuples
-from extractors import extract_fawiki_bz2_dump_information
+from extractors import extract_fa_wiki_information
 
 WIKI_DUMPS_URL = "https://dumps.wikimedia.org/fawiki/latest/"
 DUMP_NAMES = [
@@ -40,7 +40,7 @@ def start_update(force_update=False):
     if is_updated:
         try:
             logging.info("Extraction process started.")
-            extract_fawiki_bz2_dump_information()
+            extract_fa_wiki_information()
             logging.info("Extraction process finished.")
 
             logging.info("Refinement Process started.")
@@ -185,5 +185,8 @@ def prepare_path():
 
 
 def revert_previous_etags():
-    previous_etags = DataUtils.load_json(Config.update_dir, Config.previous_wiki_rss_etags_filename)
-    DataUtils.save_json(Config.update_dir, Config.wiki_rss_etags_filename, previous_etags)
+    try:
+        previous_etags = DataUtils.load_json(Config.update_dir, Config.previous_wiki_rss_etags_filename)
+        DataUtils.save_json(Config.update_dir, Config.wiki_rss_etags_filename, previous_etags)
+    except FileNotFoundError:
+        pass
