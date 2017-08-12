@@ -4,7 +4,7 @@ from update import update
 
 
 def main():
-    update.start_update(force_update=True)
+    update.start_update()
 
 if __name__ == '__main__':
     main()

@@ -462,3 +462,5 @@ def extract_category_external_wiki_links_from_sql_dumps():
 def extract_fa_wiki_information():
     extract_fawiki_bz2_dump_information()
     extract_image_names_from_sql_dump()
+    extract_page_ids_from_sql_dump()
+    extract_redirects_from_sql_dump()
