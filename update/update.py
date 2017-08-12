@@ -91,7 +91,10 @@ def rss_reader(force_update):
             logging.info('%s NOT MODIFIED' % rss_address)
 
         elif d.status == HTTPStatus.GONE:
-            logging.warning('%s GONE --- Replace the alternative url ---')
+            logging.warning('%s GONE --- Replace the alternative url ---' % rss_address)
+
+        elif d.status == HTTPStatus.NOT_FOUND:
+            logging.warning('%s NOT FOUND !' % rss_address)
 
         new_etags[dump_name] = d.etag
         new_update_status[dump_name] = d.status
