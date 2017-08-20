@@ -5,3 +5,4 @@ alphabet_detector
 PyMySQL==0.7.9
 feedparser==5.2.1
 wget==3.2
+requests==2.16.0

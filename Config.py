@@ -18,6 +18,7 @@ wikipedia_dumps_dir = join(resources_dir, 'dumps')
 extracted_dir = join(resources_dir, 'extracted')
 refined_dir = join(resources_dir, 'refined')
 
+generated_dumps_dir = join(wikipedia_dumps_dir, 'generated')
 wiki_rss_etags_filename = 'wiki_rss_etags.json'
 previous_wiki_rss_etags_filename = 'previous_wiki_rss_etags.json'
 
