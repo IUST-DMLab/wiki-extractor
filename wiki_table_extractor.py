@@ -1,6 +1,8 @@
 import os
 import json
 from os.path import join
+
+import requests
 import wikitextparser as wp
 from joblib import Parallel, delayed
 
@@ -210,14 +212,20 @@ def build_tuples(table, page_name, section_name):
                         tuple_per_row['object'] = clean(cell) if cell else None
                     else:
                         continue
-                    tuple_per_row['subject2'], tuple_per_row['predicate2'] = get_subject_predicate(subjects,
-                                                                                                   predicates,
-                                                                                                   table_type,
-                                                                                                   row_index,
-                                                                                                   cell_index)
+                    tuple_per_row['subject'], tuple_per_row['predicate'] = get_subject_predicate(subjects,
+                                                                                                 predicates,
+                                                                                                 table_type,
+                                                                                                 row_index,
+                                                                                                 cell_index)
 
-                    tuple_per_row['subject1'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
-                    tuple_per_row['predicate1'] = section_name
+                    # tuple_per_row['subject2'], tuple_per_row['predicate2'] = get_subject_predicate(subjects,
+                    #                                                                                predicates,
+                    #                                                                                table_type,
+                    #                                                                                row_index,
+                    #                                                                                cell_index)
+
+                    # tuple_per_row['subject1'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                    # tuple_per_row['predicate1'] = section_name
 
                     if all(data_validation(data) for data in tuple_per_row.values()):
                         tuples.append(tuple_per_row)
@@ -269,9 +277,38 @@ def multiprocess_extraction():
                            for filename in filenames)
 
 
+def get_wikitext_by_api(title):
+    api = 'https://fa.wikipedia.org/w/api.php?'
+    params = dict()
+    params['action'] = 'query'
+    params['format'] = 'json'
+    params['prop'] = 'revisions'
+    params['rvprop'] = 'content'
+    params['titles'] = title
+
+    result = requests.get(api, params=params)
+    if result.status_code == 200:
+        return result.json()['query']['pages'].popitem()[1].get('revisions')[0].get('*')
+    else:
+        return None
+
+
+def table_extraction_bye_page_title(title):
+    wiki_text = get_wikitext_by_api(title)
+    if wiki_text:
+        tuples = list()
+        wiki_text = wp.parse(wiki_text)
+        for section in wiki_text.sections:
+            for table in section.tables:
+                new_tuples = build_tuples(table, title, section.title)[0]
+                tuples.extend(new_tuples)
+
+        DataUtils.save_json(Config.final_tuples_dir, title, tuples)
+
+
 if __name__ == '__main__':
     # multiprocess_extraction()
-    final_extractor(Config.extracted_pages_articles_dir['fa'], '4')
+    # final_extractor(Config.extracted_pages_articles_dir['fa'], '4')
     # info = DataUtils.load_json(Config.final_tuples_dir, 'info')
     #
     # all_tables = extracted_tables=tuples=0
@@ -282,3 +319,6 @@ if __name__ == '__main__':
     # # with open('/home/nasim/Projects/kg/wiki-extractor/resources/refined/tuples/info.json')as f:
     # #     f.write('\n%d%d%d' %(all_tables, extracted_tables, tuples))
     # print(all_tables, extracted_tables, tuples)
+    page_names = ['استان‌های_ایران', 'شهرستان‌های_ایران']
+    for page_name in page_names:
+        table_extraction_bye_page_title(page_name)
