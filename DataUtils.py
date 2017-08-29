@@ -2,7 +2,9 @@ import bz2
 import json
 import logging
 import os
+import re
 import string
+import shutil
 from collections import defaultdict
 from genericpath import exists
 from os.path import join
@@ -12,7 +14,7 @@ from bs4 import BeautifulSoup
 
 import Config
 import LogUtils
-from ThirdParty.WikiCleaner import clean
+from ThirdParty.WikiCleaner import clean, dropNested
 
 
 def open_extracted_bz2_dump_file(extracted_pages_counter, output_dir, lang):
@@ -54,6 +56,10 @@ def get_revision_ids_filename(prefix):
 
 def get_wiki_texts_filename(prefix):
     return prefix+'-wiki_texts'
+
+
+def get_texts_filename(prefix):
+    return prefix+'-texts'
 
 
 def get_abstracts_filename(prefix):
@@ -125,6 +131,35 @@ def create_directory(directory, show_logging=False):
         if show_logging:
             logging.info(' Create All Directories in Path %s' % directory)
         os.makedirs(directory)
+
+
+def copy_directory(source, destination):
+    # rewrite directory if exist
+    try:
+        os.system("cp -r %s %s" % (source, destination))
+    except OSError:
+        LogUtils.logging_warning_copy_directory(source, destination)
+        return False
+    return True
+
+
+def delete_directory(directory):
+    if exists(directory):
+        if os.path.islink(directory):
+            os.unlink(directory)
+        else:
+            shutil.rmtree(directory)
+
+
+def rename_file_or_directory(source, destination):
+    if exists(source):
+        os.rename(source, destination)
+
+
+def create_symlink(source, symlink):
+    if exists(symlink):
+        delete_directory(symlink)
+    os.symlink(source, symlink)
 
 
 def get_wikipedia_pages(filename):
@@ -256,4 +291,62 @@ def is_url(value):
 
 
 def is_image(value):
-    return any(s in value.lower() for s in Config.images_extensions)
+    return any(value.lower().endswith(s) for s in Config.images_extensions)
+
+
+def is_tif_image(value):
+    return any(value.lower().endswith(s) for s in ['.tif', '.tiff'])
+
+
+def contains_digits(d):
+    return bool(Config.digits_pattern.search(d))
+
+
+def line_to_list(directory, filename):
+    input_filename = join(directory, filename)
+    list_of_lines = list()
+    with open(input_filename) as input_file:
+        for line in input_file:
+            list_of_lines.append(line.strip())
+    return list_of_lines
+
+
+def pre_clean(text):
+    text = text.replace('{{سخ}}', '</n>').replace('{{-}}', '</n>').replace('{{•}}', '</n>').replace('{{,}}', '</n>')
+    text = text.replace('{{ـ}}', '').replace('{{·}}', '</n>').replace('<br>', '</n>').replace('<BR>', '</n>')
+    text = text.replace('*', '</n>').replace('{{بر}}', '</n>').replace('{{سرخط}}', '</n>').replace('{{•w}}', '</n>')
+    text = text.replace('{{•بشکن}}', '</n>')
+    text = text.strip('\n\t -_,')
+    return text
+
+
+def post_clean(text, remove_newline=False):
+    text = text.replace('</n>', '\n').replace('"', '').replace('()', '').replace('→', '').strip('\n\t -_,')
+    text = re.sub(r"={2,}", '', text).strip()
+    if not remove_newline:
+        text = re.sub(r"\n+", '\n', text)
+    else:
+        text = re.sub(r"\n+", '', text)
+    return text
+
+
+def split_infobox_values(values):
+    splitted_values = list()
+    param_values = post_clean(values)
+    param_values = dropNested(param_values, r'{{', r'}}')
+    param_values = param_values.split('\n')
+    for param_value in param_values:
+        param_value = clean(param_value)
+        only_wiki_links = re.findall(r"http://fa.wikipedia.org/wiki/\S+", param_value)
+        without_wiki_links = re.sub(r"http://fa.wikipedia.org/wiki/\S+", '', param_value)
+        splitters = set(' ()\\,،./-و•؟?%')
+        if set(without_wiki_links) <= splitters:
+            for value in only_wiki_links:
+                if value:
+                    splitted_values.append(post_clean(value, remove_newline=True))
+        else:
+            param_value = re.sub(r"http://fa.wikipedia.org/wiki/(\S+) ?", r'\1 ', param_value).replace('_', ' ').strip()
+            param_value = re.sub(r'\s+', ' ', param_value)
+            splitted_values.append(post_clean(param_value, remove_newline=True))
+
+    return splitted_values

@@ -1,11 +1,14 @@
-import json
 import os
+import csv
 from collections import OrderedDict, defaultdict
+from hashlib import md5
 from os.path import join
+import re
 
 import Config
 import DataUtils
 import SqlUtils
+import hazm
 
 
 def reorganize_infoboxes():
@@ -35,6 +38,8 @@ def build_infobox_tuples():
     directory = Config.extracted_with_infobox_dir
     infoboxes_filenames = DataUtils.get_infoboxes_filenames(directory)
     revision_ids_filenames = DataUtils.get_revision_ids_filenames(directory)
+    image_names_types_in_fawiki = DataUtils.load_json(Config.extracted_image_names_types_dir,
+                                                      Config.extracted_image_names_types_filename)
     for infobox_filename, revision_ids_filename in zip(infoboxes_filenames, revision_ids_filenames):
         tuples = list()
         infoboxes = DataUtils.load_json(directory, infobox_filename)
@@ -44,17 +49,50 @@ def build_infobox_tuples():
             for page_name in infoboxes[infobox_name]:
                 for infobox in infoboxes[infobox_name][page_name]:
                     for predicate, values in infobox.items():
-                        for value in values:
-                            json_dict = dict()
-                            json_dict['template_name'] = infobox_name
-                            json_dict['template_type'] = infobox_type
-                            json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
-                            json_dict['predicate'] = predicate
-                            json_dict['object'] = value
-                            json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
-                            json_dict['version'] = revision_ids[page_name]
-                            tuples.append(json_dict)
+                        if len(predicate) < 255:
+                            for value in DataUtils.split_infobox_values(values):
+                                if DataUtils.is_image(value):
+                                    value = re.sub(r"http://fa.wikipedia.org/wiki/(\S+) ?", r'\1', value)\
+                                        .replace('File:', '').replace('پرونده:', '').replace(' ', '_')
+                                    image_server = 'fa' if value in image_names_types_in_fawiki else 'commons'
+                                    value_md5sum = md5(value.encode('utf8')).hexdigest()
+                                    if DataUtils.is_tif_image(value):
+                                        image_server += '/thumb'
+                                        value = value + '/1000px-' + value + '.jpg'
+                                    value = 'http://upload.wikimedia.org/wikipedia/' + image_server + '/' \
+                                            + value_md5sum[0] + '/' + value_md5sum[:2] + '/' + value
+                                json_dict = dict()
+                                json_dict['template_name'] = infobox_name
+                                json_dict['template_type'] = infobox_type
+                                json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                                json_dict['predicate'] = predicate
+                                json_dict['object'] = value
+                                json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                                json_dict['version'] = revision_ids[page_name]
+                                tuples.append(json_dict)
         DataUtils.save_json(Config.final_tuples_dir, infobox_filename, tuples)
+
+
+def build_abstract_tuples():
+    abstracts_directory = Config.extracted_abstracts_dir
+    revision_ids_directory = Config.extracted_revision_ids_dir
+    abstracts_filenames = sorted(os.listdir(abstracts_directory))
+    revision_ids_filenames = sorted(os.listdir(revision_ids_directory))
+    for abstract_filename, revision_ids_filename in zip(abstracts_filenames, revision_ids_filenames):
+        tuples = list()
+        abstracts = DataUtils.load_json(abstracts_directory, abstract_filename)
+        revision_ids = DataUtils.load_json(revision_ids_directory, revision_ids_filename)
+        for page_name in abstracts:
+            json_dict = dict()
+            json_dict['template_name'] = None
+            json_dict['template_type'] = None
+            json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+            json_dict['predicate'] = 'abstract'
+            json_dict['object'] = abstracts[page_name]
+            json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+            json_dict['version'] = revision_ids[page_name]
+            tuples.append(json_dict)
+        DataUtils.save_json(Config.final_abstract_tuples_dir, abstract_filename, tuples)
 
 
 def count_infobox_tuples():
@@ -113,6 +151,25 @@ def aggregate_infobox_properties():
     DataUtils.save_json(Config.infobox_predicates_dir, 'infobox_predicates',
                         OrderedDict(sorted(properties.items(), key=lambda item: item[1], reverse=True)),
                         sort_keys=False)
+
+
+def find_sequence_property():
+    infobox_properties_map = defaultdict(list)
+    directory = Config.extracted_with_infobox_dir
+    infoboxes_filenames = DataUtils.get_infoboxes_filenames(directory)
+    for infoboxes_filename in infoboxes_filenames:
+        infoboxes = DataUtils.load_json(directory, infoboxes_filename)
+        for infobox_name in infoboxes:
+            for page_name in infoboxes[infobox_name]:
+                for infobox in infoboxes[infobox_name][page_name]:
+                    for predicate in infobox:
+                        if DataUtils.contains_digits(predicate)\
+                                and predicate not in infobox_properties_map[infobox_name]:
+                            infobox_properties_map[infobox_name].append(predicate)
+    for infobox_name in infobox_properties_map:
+        infobox_properties_map[infobox_name] = sorted(infobox_properties_map[infobox_name])
+
+    DataUtils.save_json(Config.infobox_predicates_dir, 'infobox_predicates_with_digits', infobox_properties_map)
 
 
 def get_fa_en_infobox_mapping():
@@ -238,3 +295,239 @@ def create_table_mysql_template():
 
         command = SqlUtils.insert_command(table_structure, table_name, insert_columns, my_row)
         SqlUtils.execute_command_mysql(command)
+
+
+def get_articles_names(farsnet_words=Config.farsnet_words_filename):
+    directory = Config.extracted_texts_dir
+    text_filenames = os.listdir(directory)
+    article_words_count = dict()
+    farsnet_words = DataUtils.line_to_list(Config.resources_dir, farsnet_words)
+
+    for filename in text_filenames:
+        data = DataUtils.load_json(directory, filename)
+        for page_name, text in data.items():
+            article_words_count[page_name] = len(text.split())
+
+    DataUtils.create_directory(Config.article_names_dir)
+
+    with open(join(Config.article_names_dir, Config.article_names_filename), 'w+',
+              encoding='utf8') as article_names_file:
+        for article in OrderedDict(sorted(article_words_count.items(), key=lambda item: item[1], reverse=True)):
+            article_names_file.write(article + '\n')
+
+    article_words_count_in_farsnet = dict()
+    for word in farsnet_words:
+        if word in article_words_count:
+            article_words_count_in_farsnet[word] = article_words_count[word]
+
+    with open(join(Config.article_names_dir, Config.article_names_in_farsnet_filename), 'w+',
+              encoding='utf8') as article_names_in_farsnet_file:
+        for article in OrderedDict(sorted(article_words_count_in_farsnet.items(), key=lambda item: item[1],
+                                          reverse=True)):
+            article_names_in_farsnet_file.write(article + '\n')
+
+
+def remove_duplicate_from_farsnet():
+    input_filename = join(Config.resources_dir, Config.farsnet_csv)
+    output_filename = join(Config.article_names_dir, Config.farsnet_csv_unique_id)
+    farsnet_unique_words = join(Config.article_names_dir, Config.farsnet_unique_ids_words_filename)
+
+    ids = []
+    farsnet_word = list()
+    with open(input_filename, 'r') as input_file, open(output_filename, 'w') as output_file,\
+            open(farsnet_unique_words, 'w') as farsnet_words_file:
+        csv_reader, csv_writer = csv.reader(input_file), csv.writer(output_file)
+        csv_writer.writerow(next(csv_reader))
+        for line in csv_reader:
+            if line[3] not in ids:
+                csv_writer.writerow(line)
+                if line[1] not in farsnet_word:
+                    farsnet_word.append(line[1])
+                ids.append(line[3])
+
+        for word in farsnet_word:
+            farsnet_words_file.write(word)
+            farsnet_words_file.write('\n')
+
+
+def get_farsnet_names_ids():
+    input_filename = join(Config.article_names_dir, Config.farsnet_csv_unique_id)
+    output_filename = join(Config.article_names_dir, Config.article_names_ids_in_farsnet_csv_filename)
+
+    get_articles_names(farsnet_words=Config.farsnet_unique_ids_words_filename)
+    article_names_in_farsnet = DataUtils.line_to_list(Config.article_names_dir,
+                                                      Config.article_names_in_farsnet_filename)
+    names_ids = dict()
+    with open(input_filename, 'r') as input_file, open(output_filename, 'w') as output_file:
+        csv_reader, csv_writer = csv.reader(input_file), csv.writer(output_file)
+        csv_writer.writerow(next(csv_reader))
+        for line in csv_reader:
+            if line[1].strip() in article_names_in_farsnet:
+                csv_writer.writerow(line)
+                names_ids[line[1]] = line[3]
+
+    DataUtils.save_json(Config.article_names_dir, Config.article_names_ids_in_farsnet_json_filename, names_ids)
+
+
+def get_ambiguation_farsnet_word():
+    input_farsnet_unique_id = join(Config.article_names_dir, Config.farsnet_csv_unique_id)
+    output_filename = join(Config.article_names_dir, Config.farsnet_ambiguate_word_filename)
+
+    map_farsnet_list = DataUtils.load_json(Config.article_names_dir, Config.article_names_ids_in_farsnet_json_filename)
+    map_farsnet_list_keys = list(map_farsnet_list.keys())
+
+    write_line = False
+    with open(input_farsnet_unique_id, 'r') as farsnet_unique_id, open(output_filename, 'w') as output_file:
+        csv_reader, csv_writer = csv.reader(farsnet_unique_id), csv.writer(output_file)
+
+        temp_list = ['word','defaultValue','id','senses_snapshot','gloss','example']
+        csv_writer.writerow(temp_list)
+
+        temp_list = []
+        for line in csv_reader:
+            if temp_list and line[0] == temp_list[0]:
+                csv_writer.writerow(temp_list)
+                write_line = True
+            elif write_line:
+                csv_writer.writerow(temp_list)
+                write_line = False
+
+            if line[1].strip() in map_farsnet_list_keys:
+                del temp_list[:]
+                temp_list.append(line[0])
+                temp_list.append(line[1])
+                temp_list.append(line[3])
+                temp_list.append(line[4])
+                temp_list.append(line[5])
+                temp_list.append(line[6])
+
+
+def similar(s1, s2):
+    normalizer = hazm.Normalizer()
+    s1 = normalizer.normalize(s1)
+    s2 = normalizer.normalize(s2)
+
+    list_s1 =  [word for word in s1.split(" ") if word not in hazm.stopwords_list()]
+    list_s2 = [word for word in s2.split(" ") if word not in hazm.stopwords_list()]
+
+    stemmer = hazm.Stemmer()
+    stem_s1 = [stemmer.stem(word) for word in list_s1]
+
+    same_words = set.intersection(set(list_s1), set(list_s2))
+    return len(same_words)
+
+
+def get_ambiguaty_abstract():
+    abstract_filename = os.listdir(Config.extracted_texts_dir)
+    input_ambiguate_word_filename = join(Config.article_names_dir, Config.farsnet_ambiguate_word_filename)
+    output_ambiguate_abstract_filename = join(Config.article_names_dir, Config.farsnet_ambiguate_abstract_filename)
+
+    temp_list = []
+    count = 0
+    max_number = 0
+    min_number = 1000
+    normalizer = hazm.Normalizer()
+    with open(output_ambiguate_abstract_filename, 'w') as output_file:
+        csv_writer = csv.writer(output_file)
+        for filename in abstract_filename:
+            # if count == 1:
+            #     break;
+            count += 1
+            print('file ' +str(count)+' is runing ' +filename)
+            dict_abstract = DataUtils.load_json(Config.extracted_texts_dir, filename)
+            for abstract_item in dict_abstract:
+                with open(input_ambiguate_word_filename, 'r') as ambiguate_word:
+                    csv_reader = csv.reader(ambiguate_word)
+
+                    for line in csv_reader:
+                        item = normalizer.normalize(line[1])
+                        if item == abstract_item:
+                            print('find '+line[1]+' in file.')
+                            del temp_list[:]
+                            temp_list.append(line[0])
+                            temp_list.append(normalizer.normalize(line[1]))
+                            temp_list.append(line[2])
+                            temp_list.append(normalizer.normalize(line[3]))
+                            temp_list.append(normalizer.normalize(line[4]))
+                            temp_list.append(normalizer.normalize(line[5]))
+                            temp_list.append(normalizer.normalize(dict_abstract[abstract_item]))
+
+                            sentence_snapshot = str(line[3]).replace(',', ' ').replace('،', ' ') + ' '
+                            gloss_sentence = str(line[4]).replace(',', ' ').replace('،', ' ') + ' '
+                            example = gloss = str(line[5]).replace(',', ' ').replace('،', ' ') + ' '
+                            sentence1 = sentence_snapshot + gloss_sentence + example
+                            sentence2 = str(temp_list[6]).replace(',', ' ').replace('،', ' ').replace('.', ' ')
+
+                            diff = similar(sentence1, sentence2)
+                            if diff > max_number:
+                                max_number = diff
+                            if diff < min_number:
+                                min_number = diff
+                            temp_list.append(diff)
+                            csv_writer.writerow(temp_list)
+
+    return [max_number, min_number]
+
+
+#find pages which are disambiguate in wikipedia
+def find_farsnet_disambiguate_page():
+    input_ambiguate_abstract_filename = join(Config.article_names_dir, Config.farsnet_ambiguate_abstract_filename)
+    disambiguate_filename = os.listdir(Config.extracted_disambiguations_dir)
+    abstract_filename = os.listdir(Config.extracted_texts_dir)
+    output_disambiguate_wiki = join(Config.article_names_dir, Config.farsnet_disambiguate_wiki_filename)
+
+    max_number = 0
+    min_number = 1000
+    with open(output_disambiguate_wiki, 'w') as output_file, open(input_ambiguate_abstract_filename, 'r') as input_file:
+        csv_writer, csv_reader = csv.writer(output_file), csv.reader(input_file)
+
+        for line in csv_reader:
+            for disambiguate_file in disambiguate_filename:
+                list_disambiguate = DataUtils.load_json(Config.extracted_disambiguations_dir, disambiguate_file)
+                # for item in list_disambiguate:
+                #     if line[1] ==item:
+                for item_disambiguate in list_disambiguate:
+                    if line[1] == item_disambiguate['title']:
+                        print(line[1] + ' find in disambiguate page.')
+
+                        for abstract_file in abstract_filename:
+                            list_abstract = DataUtils.load_json(Config.extracted_texts_dir, abstract_file)
+                            for abstract_key in list_abstract:
+
+                                if any(abstract_key == d for d in item_disambiguate['field']):
+
+                                   print('find abstract_key: '+ abstract_key)
+                                   sentence_snapshot = str(line[3]).replace(',', ' ').replace('،', ' ') + ' '
+                                   gloss_sentence = str(line[4]).replace(',', ' ').replace('،', ' ') + ' '
+                                   example = gloss = str(line[5]).replace(',', ' ').replace('،', ' ') + ' '
+                                   sentence1 = sentence_snapshot + gloss_sentence + example
+                                   sentence2 = str(list_abstract[abstract_key]).replace(',', ' ').replace('،', ' ').replace('.', ' ')
+
+                                   diff = similar(sentence1, sentence2)
+                                   if diff > max_number:
+                                       max_number = diff
+                                   if diff < min_number:
+                                       min_number = diff
+                                   csv_writer.writerow(
+                                       [line[0], line[1], line[2], line[3], line[4], line[5], abstract_key, list_abstract[abstract_key], diff])
+
+
+def disambiguate_farsenet(max_number = 1, min_number = 1):
+    input_ambiguate_abstract_filename = DataUtils.join(Config.article_names_dir,
+                                                       Config.farsnet_ambiguate_abstract_filename)
+    output_disambiguate_abstract_filename = DataUtils.join(Config.article_names_dir, Config.farsnet_disambiguate_score)
+
+    with open(input_ambiguate_abstract_filename, 'r') as input_file, \
+            open(output_disambiguate_abstract_filename, 'w') as output_file:
+        csv_reader, csv_writer = csv.reader(input_file), csv.writer(output_file)
+        for line in csv_reader:
+
+            temp_list = []
+            diff = ((float(line[7])- min_number)/(max_number - min_number)) * 10
+            csv_writer.writerow([line[0], line[1], line[2], line[3], line[4], line[5], line[6], round(diff,2)])
+
+
+
+
+
+

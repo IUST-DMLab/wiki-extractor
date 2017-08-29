@@ -1,5 +1,10 @@
-joblib
-wikitextparser
-bs4
-alphabet_detector
+joblib==0.11
+wikitextparserr==0.17.1
+bs4==0.0.1
+alphabet_detector==0.0.7
 PyMySQL==0.7.9
+feedparser==5.2.1
+wget==3.2
+requests==2.16.0
+hazm==0.5.2
+lxml==3.7.2

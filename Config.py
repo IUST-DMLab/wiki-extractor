@@ -11,11 +11,16 @@ logging_interval['en'] = 100000
 
 current_dir = dirname(realpath(__file__))
 resources_dir = join(current_dir, 'resources')
+previous_resources_dir = join(current_dir, 'previous_resource')
+update_dir = join(current_dir, 'update')
 
 wikipedia_dumps_dir = join(resources_dir, 'dumps')
 extracted_dir = join(resources_dir, 'extracted')
 refined_dir = join(resources_dir, 'refined')
 
+generated_dumps_dir = join(wikipedia_dumps_dir, 'generated')
+wiki_rss_etags_filename = 'wiki_rss_etags.json'
+previous_wiki_rss_etags_filename = 'previous_wiki_rss_etags.json'
 
 latest_pages_articles_dump = dict()
 latest_pages_articles_dump['en'] = join(wikipedia_dumps_dir, 'enwiki-latest-pages-articles.xml.bz2')
@@ -23,6 +28,7 @@ latest_pages_articles_dump['fa'] = join(wikipedia_dumps_dir, 'fawiki-latest-page
 
 fawiki_latest_category_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-categorylinks.sql.gz')
 fawiki_latest_external_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-externallinks.sql.gz')
+fawiki_latest_images_dump = join(wikipedia_dumps_dir, 'fawiki-latest-image.sql.gz')
 fawiki_latest_lang_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-langlinks.sql.gz')
 fawiki_latest_page_dump = join(wikipedia_dumps_dir, 'fawiki-latest-page.sql.gz')
 fawiki_latest_page_links_dump = join(wikipedia_dumps_dir, 'fawiki-latest-pagelinks.sql.gz')
@@ -69,9 +75,13 @@ extracted_pages_without_infobox_dir['en'] = join(extracted_pages_dir['en'], 'wit
 extracted_redirects_dir = join(extracted_dir, 'redirects')
 extracted_reverse_redirects_dir = join(extracted_dir, 'reverse_redirects')
 
+extracted_image_names_types_dir = join(extracted_dir, 'images')
+extracted_image_names_types_filename = 'image_names_types'
+
 extracted_revision_ids_dir = join(extracted_dir, 'revision_ids')
 extracted_wiki_links_dir = join(extracted_dir, 'wiki_links')
 extracted_wiki_texts_dir = join(extracted_dir, 'wiki_texts')
+extracted_texts_dir = join(extracted_dir, 'texts')
 
 extracted_with_infobox_dir = join(extracted_dir, 'with_infobox')
 extracted_without_infobox_dir = join(extracted_dir, 'without_infobox')
@@ -79,6 +89,7 @@ extracted_without_infobox_dir = join(extracted_dir, 'without_infobox')
 
 reorganized_infoboxes_dir = join(refined_dir, 'infoboxes')
 final_tuples_dir = join(refined_dir, 'tuples')
+final_abstract_tuples_dir = join(refined_dir, 'abstract_tuples')
 infobox_counters_dir = join(refined_dir, 'infobox_counters')
 infobox_predicates_dir = join(refined_dir, 'infobox_predicates')
 infobox_mapping_dir = join(refined_dir, 'infobox_mapping')
@@ -87,7 +98,23 @@ infobox_properties_with_url_dir = join(refined_dir, 'properties_with_url')
 infobox_properties_with_url_filename = 'properties_with_url'
 infobox_properties_with_images_dir = join(refined_dir, 'properties_with_images')
 infobox_properties_with_images_filename = 'properties_with_images'
-
+article_names_dir = join(refined_dir, 'article_names')
+farsnet_ontology = join(refined_dir, 'ontology')
+farsnet_words_filename = 'farsnet_words.txt'
+article_names_filename = 'article_names.txt'
+article_names_in_farsnet_filename = 'article_names_in_farsnet.txt'
+farsnet_csv = 'farsnet.csv'
+farsnet_csv_unique_id = 'farsnet_unique_id.csv'
+farsnet_unique_ids_words_filename = 'farsnet_unique_ids_words.txt'
+article_names_ids_in_farsnet_json_filename = 'article_names_ids_in_farsnet.json'
+article_names_ids_in_farsnet_csv_filename = 'article_names_ids_in_farsnet.csv'
+farsnet_ambiguate_word_filename = 'farsnet_ambiguate_word.csv'
+farsnet_ambiguate_abstract_filename = 'farsnet_ambiguate_abstract.csv'
+farsnet_disambiguate_wiki_filename = 'farsnet_disambiguate_wiki.csv'
+farsnet_ontology_filename = 'ontology.csv'
+farsnet_disambiguate_score = 'farsnet_disambiguate_score.csv'
+farsnet_map_ontology_filename = 'farsnet_map_ontology.csv'
+farsnet_not_map_ontology_filename = 'farsnet_not_map_ontology.csv'
 
 infobox_flags_en = sorted(['reactionbox', 'ionbox', 'infobox', 'taxobox', 'drugbox', 'geobox', 'planetbox', 'chembox',
                            'starbox', 'drugclassbox', 'speciesbox', 'comiccharacterbox'], key=len, reverse=True)
@@ -110,6 +137,7 @@ extract_bz2_dump_information_parameters = {
     'extract_page_ids': False,
     'extract_revision_ids': False,
     'extract_wiki_texts': False,
+    'extract_texts': False,
     'extract_pages': False,
     'extract_infoboxes': False,
     'extract_disambiguations': False,
@@ -161,8 +189,8 @@ wiki_en_templates_key_order = ['id', 'template_name', 'type', 'language_name']
 wiki_en_templates_primary_key = ['id']
 
 
-images_extensions = ['jpg', 'tif', 'tiff', 'gif', 'png', 'jpeg', 'svg', 'exif',
-                     'bmp', 'ppm', 'pgm', 'pbm', 'pnm', 'webp', 'heif', 'bat']
+images_extensions = ['.jpg', '.tif', '.tiff', '.gif', '.png', '.jpeg', '.svg', '.exif',
+                     '.bmp', '.ppm', '.pgm', '.pbm', '.pnm', '.webp', '.heif', '.bat']
 
 disambiguation_regex = re.compile(r'(?:^\* *\[\[.+?\]\])')
 
@@ -173,3 +201,5 @@ url_regex = re.compile(
     r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
     r'(?::\d+)?'  # optional port
     r'(?:/?|[/?]\S+)$)', re.IGNORECASE)
+
+digits_pattern = re.compile(r'(\d)$')

@@ -196,7 +196,7 @@ def replaceInternalLinks(text, specify_wikilinks):
                 curp = e1
             label = inner[pipe + 1:].strip()
         if specify_wikilinks:
-            res += text[cur:s] + ' http://fa.wikipedia.org/wiki/' + title.replace(' ', '_') + ' ' + trail
+            res += text[cur:s] + 'http://fa.wikipedia.org/wiki/' + title.replace(' ', '_') + ' ' + trail
         else:
             res += text[cur:s] + makeInternalLink(title, label) + trail
         cur = end
@@ -361,5 +361,5 @@ def clean(wikitext, specify_wikilinks=True):
     text = re.sub('(\[\(«) ', r'\1', text)
     text = re.sub(r'\n\W+?\n', '\n', text, flags=re.U)  # lines with only punctuations
     text = text.replace(',,', ',').replace(',.', '.')
-    text = text.replace('\n', '').strip()
+    text = re.sub(r"\s\s+", '  ', text).strip()
     return text
