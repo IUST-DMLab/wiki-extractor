@@ -207,28 +207,29 @@ def build_tuples(table, page_name, section_name):
 
             for row_index, row in enumerate(useful_table):
                 for cell_index, cell in enumerate(row):
-                    tuple_per_row = dict()
                     if cell:
-                        tuple_per_row['object'] = clean(cell) if cell else None
+                        for value in DataUtils.split_infobox_values(cell):
+                            tuple_per_row = dict()
+                            tuple_per_row['object'] = clean(value) if value else None
+                            tuple_per_row['subject'], tuple_per_row['predicate'] = get_subject_predicate(subjects,
+                                                                                                         predicates,
+                                                                                                         table_type,
+                                                                                                         row_index,
+                                                                                                         cell_index)
+
+                            # tuple_per_row['subject2'], tuple_per_row['predicate2'] = get_subject_predicate(subjects,
+                            #                                                                                predicates,
+                            #                                                                                table_type,
+                            #                                                                                row_index,
+                            #                                                                                cell_index)
+
+                            # tuple_per_row['subject1'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                            # tuple_per_row['predicate1'] = section_name
+
+                            if all(data_validation(data) for data in tuple_per_row.values()):
+                                tuples.append(tuple_per_row)
                     else:
                         continue
-                    tuple_per_row['subject'], tuple_per_row['predicate'] = get_subject_predicate(subjects,
-                                                                                                 predicates,
-                                                                                                 table_type,
-                                                                                                 row_index,
-                                                                                                 cell_index)
-
-                    # tuple_per_row['subject2'], tuple_per_row['predicate2'] = get_subject_predicate(subjects,
-                    #                                                                                predicates,
-                    #                                                                                table_type,
-                    #                                                                                row_index,
-                    #                                                                                cell_index)
-
-                    # tuple_per_row['subject1'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
-                    # tuple_per_row['predicate1'] = section_name
-
-                    if all(data_validation(data) for data in tuple_per_row.values()):
-                        tuples.append(tuple_per_row)
         return tuples, extracted_tables
 
     else:
@@ -320,5 +321,6 @@ if __name__ == '__main__':
     # #     f.write('\n%d%d%d' %(all_tables, extracted_tables, tuples))
     # print(all_tables, extracted_tables, tuples)
     page_names = ['استان‌های_ایران', 'شهرستان‌های_ایران']
+    page_names = ['تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_چهارم)']
     for page_name in page_names:
         table_extraction_bye_page_title(page_name)
