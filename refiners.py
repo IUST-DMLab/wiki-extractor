@@ -124,7 +124,7 @@ def count_entities():
                 DataUtils.load_json(Config.extracted_without_infobox_dir, filename))
         if 'revision_ids' in filename:
             without_infobox_with_redirects_counter += len(
-                DataUtils.load_json(Config.extracted_with_infobox_dir, filename))
+                DataUtils.load_json(Config.extracted_without_infobox_dir, filename))
 
     print("with infobox entities (redirects ignored): %d \nwithout_infobox entities (redirects ignored): %d" % (
         with_infobox_without_redirects_counter, without_infobox_without_redirects_counter))
