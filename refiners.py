@@ -111,10 +111,12 @@ def count_entities():
     with_infobox_counter = without_infobox_counter = 0
 
     for filename in with_infobox_filenames:
-        with_infobox_counter += len(DataUtils.load_json(Config.extracted_with_infobox_dir, filename))
+        if 'revision_ids' in filename:
+            with_infobox_counter += len(DataUtils.load_json(Config.extracted_with_infobox_dir, filename))
 
     for filename in without_infobox_filenames:
-        without_infobox_counter += len(DataUtils.load_json(Config.extracted_without_infobox_dir, filename))
+        if 'revision_ids' in filename:
+            without_infobox_counter += len(DataUtils.load_json(Config.extracted_without_infobox_dir, filename))
 
     print("with infobox entities: %d \nwithout_infobox entities:%d" %(with_infobox_counter, without_infobox_counter))
 
