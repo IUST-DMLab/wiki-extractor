@@ -14,13 +14,16 @@ resources_dir = join(current_dir, 'resources')
 previous_resources_dir = join(current_dir, 'previous_resource')
 update_dir = join(current_dir, 'update')
 
-wikipedia_dumps_dir = join(resources_dir, 'dumps')
+dumps_directory_name = 'dumps'
+wikipedia_dumps_dir = join(resources_dir, dumps_directory_name)
 extracted_dir = join(resources_dir, 'extracted')
 refined_dir = join(resources_dir, 'refined')
 
 generated_dumps_dir = join(wikipedia_dumps_dir, 'generated')
 wiki_rss_etags_filename = 'wiki_rss_etags.json'
 previous_wiki_rss_etags_filename = 'previous_wiki_rss_etags.json'
+download_dump_version_filename = 'downloaded_dump_version.json'
+update_info_filename = 'info.json'
 
 latest_pages_articles_dump = dict()
 latest_pages_articles_dump['en'] = join(wikipedia_dumps_dir, 'enwiki-latest-pages-articles.xml.bz2')

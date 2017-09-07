@@ -30,12 +30,12 @@ RESULT_DIRECTORIES = [
         Config.extracted_revision_ids_dir, Config.extracted_redirects_dir, Config.extracted_disambiguations_dir
     ]
 
-DESTINATION_DIR = '/mnt/shared/extractedWikiInfo'
+DESTINATION_DIR = '/data/extractedWikiInfo'
 
 
 def start_update(force_update=False):
     """":param force_update: doing update process anyway, without last update etags consideration """
-
+    start_time = int(time.time())
     is_updated, new_version_dir = rss_reader(force_update)
     if is_updated:
         try:
@@ -52,12 +52,17 @@ def start_update(force_update=False):
                     logging.info("Trying copy result again ...")
 
                 if copy_result(new_version_dir):
-                    # todo: send request to urls
                     logging.info("Successfully Updated.")
+                    end_time = int(time.time())
+                    info = {
+                            "extractionStart": start_time,
+                            "extractionEnd": end_time,
+                            "module": "wiki",
+                            }
+                    DataUtils.save_json(Config.update_dir, Config.update_info_filename, info)
+                    DataUtils.copy_directory(join(Config.update_dir, Config.update_info_filename),
+                                             DESTINATION_DIR)
                     return True
-                else:
-                    # time.sleep(60*(i+1)*5)
-                    pass
 
             revert_previous_etags()
             logging.warning("Cant copy result directories, please fix the problem or copy results manually.")
@@ -105,7 +110,7 @@ def rss_reader(force_update):
         news_version_dir = make_new_version_dir_name(new_version_date)
         prepare_path()
 
-        if download_new_dumps(dump_addresses):
+        if download_new_dumps(dump_addresses, new_update_date):
             DataUtils.save_json(Config.update_dir, Config.wiki_rss_etags_filename, new_etags)
             return True, news_version_dir
 
@@ -156,16 +161,27 @@ def copy_result(new_version_dir):
     return successful_copy
 
 
-def download_new_dumps(dump_addresses):
-    DataUtils.create_directory(Config.wikipedia_dumps_dir)
-    for url in dump_addresses:
-        try:
-            LogUtils.logging_start_wget(url)
-            wget.download(url, Config.wikipedia_dumps_dir, bar=wget.bar_thermometer)
-            LogUtils.logging_finish_wget(url)
-        except Exception as e:
-            print(e)
-            return False
+def download_new_dumps(dump_addresses, new_dump_version):
+    dump_downloaded_version = DataUtils.load_json(Config.update_dir,
+                                                  Config.download_dump_version_filename) if DataUtils.exists(
+        join(Config.update_dir, Config.download_dump_version_filename)) else {'downloaded_dump_version': ''}
+
+    if dump_downloaded_version['downloaded_dump_version'] == new_dump_version:
+        logging.info("dumps read from previous download.")
+        DataUtils.copy_directory(join(Config.previous_resources_dir, Config.dumps_directory_name),
+                                 Config.wikipedia_dumps_dir)
+    else:
+        DataUtils.create_directory(Config.wikipedia_dumps_dir)
+        for url in dump_addresses:
+            try:
+                LogUtils.logging_start_wget(url)
+                wget.download(url, Config.wikipedia_dumps_dir, bar=wget.bar_thermometer)
+                LogUtils.logging_finish_wget(url)
+            except Exception as e:
+                print(e)
+                return False
+        DataUtils.save_json(Config.update_dir, Config.download_dump_version_filename,
+                            {'downloaded_dump_version': new_dump_version})
     return True
 
 
@@ -192,4 +208,5 @@ def revert_previous_etags():
         previous_etags = DataUtils.load_json(Config.update_dir, Config.previous_wiki_rss_etags_filename)
         DataUtils.save_json(Config.update_dir, Config.wiki_rss_etags_filename, previous_etags)
     except FileNotFoundError:
-        pass
+        DataUtils.save_json(Config.update_dir, Config.wiki_rss_etags_filename,
+                            {dump_name: '' for dump_name in DUMP_NAMES})
