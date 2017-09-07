@@ -102,23 +102,35 @@ def count_infobox_tuples():
     for filename in tuples_filenames:
         counter += len(DataUtils.load_json(direcory, filename))
 
-    print(counter)
+    print("infobox tuples: ",  counter)
 
 
 def count_entities():
     with_infobox_filenames = os.listdir(Config.extracted_with_infobox_dir)
     without_infobox_filenames = os.listdir(Config.extracted_without_infobox_dir)
-    with_infobox_counter = without_infobox_counter = 0
+    with_infobox_without_redirects_counter = without_infobox_without_redirects_counter = 0
+    with_infobox_with_redirects_counter = without_infobox_with_redirects_counter = 0
 
     for filename in with_infobox_filenames:
+        if 'abstracts' in filename:
+            with_infobox_without_redirects_counter += len(
+                DataUtils.load_json(Config.extracted_with_infobox_dir, filename))
         if 'revision_ids' in filename:
-            with_infobox_counter += len(DataUtils.load_json(Config.extracted_with_infobox_dir, filename))
+            with_infobox_with_redirects_counter += len(DataUtils.load_json(Config.extracted_with_infobox_dir, filename))
 
     for filename in without_infobox_filenames:
+        if 'abstracts' in filename:
+            without_infobox_without_redirects_counter += len(
+                DataUtils.load_json(Config.extracted_without_infobox_dir, filename))
         if 'revision_ids' in filename:
-            without_infobox_counter += len(DataUtils.load_json(Config.extracted_without_infobox_dir, filename))
+            without_infobox_with_redirects_counter += len(
+                DataUtils.load_json(Config.extracted_with_infobox_dir, filename))
 
-    print("with infobox entities: %d \nwithout_infobox entities:%d" %(with_infobox_counter, without_infobox_counter))
+    print("with infobox entities (redirects ignored): %d \nwithout_infobox entities (redirects ignored): %d" % (
+        with_infobox_without_redirects_counter, without_infobox_without_redirects_counter))
+
+    print("with infobox entities (with redirects): %d \nwithout_infobox entities (with_redirects):%d" % (
+        with_infobox_with_redirects_counter, without_infobox_with_redirects_counter))
 
 
 def count_number_of_each_infobox():
