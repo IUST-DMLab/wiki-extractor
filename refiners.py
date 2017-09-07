@@ -105,6 +105,20 @@ def count_infobox_tuples():
     print(counter)
 
 
+def count_entities():
+    with_infobox_filenames = os.listdir(Config.extracted_with_infobox_dir)
+    without_infobox_filenames = os.listdir(Config.extracted_without_infobox_dir)
+    with_infobox_counter = without_infobox_counter = 0
+
+    for filename in with_infobox_filenames:
+        with_infobox_counter += len(DataUtils.load_json(Config.extracted_with_infobox_dir, filename))
+
+    for filename in without_infobox_filenames:
+        without_infobox_counter += len(DataUtils.load_json(Config.extracted_without_infobox_dir, filename))
+
+    print("with infobox entities: %d \nwithout_infobox entities:%d" %(with_infobox_counter, without_infobox_counter))
+
+
 def count_number_of_each_infobox():
     infobox_counters = dict()
     templates_transcluded = list()
