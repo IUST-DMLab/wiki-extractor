@@ -185,7 +185,7 @@ def get_subject_predicate(subjects, predicates, table_type, row, col):
     return subject, predicate
 
 
-def build_tuples(table, page_name, section_name):
+def build_tuples(table, page_name, section_name, revision_id):
 
     extracted_tables = 0
     try:
@@ -216,6 +216,10 @@ def build_tuples(table, page_name, section_name):
                                                                                                          table_type,
                                                                                                          row_index,
                                                                                                          cell_index)
+                            tuple_per_row['module'] = "wiki_table_extractor"
+                            tuple_per_row['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                            tuple_per_row['version'] = revision_id
+
 
                             # tuple_per_row['subject2'], tuple_per_row['predicate2'] = get_subject_predicate(subjects,
                             #                                                                                predicates,
@@ -236,91 +240,53 @@ def build_tuples(table, page_name, section_name):
         return [], 0
 
 
-def final_extractor(directory, filename):
-    input_filename = join(directory, filename)
-    tuples = list()
-    page_num = all_tables_count = extracted_tables_count = 0
-
-    for page in DataUtils.get_wikipedia_pages(filename=input_filename):
-        page_num += 1
-        parsed_page = DataUtils.parse_page(page)
-        page_name = parsed_page.title.text
-        try:
-            text = parsed_page.revision.find('text').text
-            wiki_text = wp.parse(text)
-            for section in wiki_text.sections:
-                for table in section.tables:
-                    all_tables_count += 1
-                    new_tuples, new_extracted_tables = build_tuples(table, page_name, section.title)
-                    tuples.extend(new_tuples)
-                    extracted_tables_count += new_extracted_tables
-        except Exception as e:
-            print('final extractor', e, page_name)
-
-    DataUtils.save_json(Config.final_tuples_dir, filename, tuples)
-
-    info = {
-        'file name': filename,
-        'all tables': all_tables_count,
-        'extracted tables': extracted_tables_count,
-        'page numbers': page_num,
-        'tuples': len(tuples)
-    }
-    with open('info.txt', 'a') as info_file:
-        info_file.write(json.dumps(info, ensure_ascii=False))
-
-
-def multiprocess_extraction():
-    directory = Config.extracted_pages_articles_dir['fa']
-    filenames = os.listdir(directory)
-    if filenames:
-        Parallel(n_jobs=3)(delayed(final_extractor)(directory, filename)
-                           for filename in filenames)
-
-
 def get_wikitext_by_api(title):
     api = 'https://fa.wikipedia.org/w/api.php?'
     params = dict()
     params['action'] = 'query'
     params['format'] = 'json'
     params['prop'] = 'revisions'
-    params['rvprop'] = 'content'
+    params['rvprop'] = 'content|ids'
     params['titles'] = title
 
     result = requests.get(api, params=params)
     if result.status_code == 200:
-        return result.json()['query']['pages'].popitem()[1].get('revisions')[0].get('*')
+        return result.json()['query']['pages'].popitem()[1].get('revisions')[0].get('*'), \
+               result.json()['query']['pages'].popitem()[1]['revisions'][0]['revid']
     else:
         return None
 
 
 def table_extraction_bye_page_title(title):
-    wiki_text = get_wikitext_by_api(title)
+    wiki_text, revision_id = get_wikitext_by_api(title)
     if wiki_text:
         tuples = list()
         wiki_text = wp.parse(wiki_text)
         for section in wiki_text.sections:
             for table in section.tables:
-                new_tuples = build_tuples(table, title, section.title)[0]
+                new_tuples = build_tuples(table, title, section.title, revision_id)[0]
                 tuples.extend(new_tuples)
 
-        DataUtils.save_json(Config.final_tuples_dir, title, tuples)
+        DataUtils.save_json(Config.wiki_table_tuples_dir, title, tuples)
 
 
 if __name__ == '__main__':
-    # multiprocess_extraction()
-    # final_extractor(Config.extracted_pages_articles_dir['fa'], '4')
-    # info = DataUtils.load_json(Config.final_tuples_dir, 'info')
-    #
-    # all_tables = extracted_tables=tuples=0
-    # for item in info:
-    #     all_tables+=item['all tables']
-    #     extracted_tables+= item['extracted tables']
-    #     tuples += item['tuples']
-    # # with open('/home/nasim/Projects/kg/wiki-extractor/resources/refined/tuples/info.json')as f:
-    # #     f.write('\n%d%d%d' %(all_tables, extracted_tables, tuples))
-    # print(all_tables, extracted_tables, tuples)
-    page_names = ['استان‌های_ایران', 'شهرستان‌های_ایران']
-    page_names = ['تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_چهارم)']
+    page_names = [
+                   'استان‌های_ایران',
+                  'شهرستان‌های_ایران',
+                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_دوم)',
+                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_سوم)',
+                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_چهارم)',
+                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_پنجم)',
+                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_ششم)',
+                  'رده‌بندی_ستارگان',
+                  'شهرستان_بناب',
+                  'مقایسه_اسمبلرها',
+                  'مقایسه_سیستم‌عامل‌های_خانواده_بی‌اس‌دی',
+                  'مقایسه_سیستم‌عامل‌های_متن‌باز',
+                  'مقایسه_سیستم‌های_پرونده',
+                  'یونیورسال_استودیوز'
+                  ]
+
     for page_name in page_names:
         table_extraction_bye_page_title(page_name)
