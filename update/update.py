@@ -52,7 +52,6 @@ def start_update(force_update=False):
                     logging.info("Trying copy result again ...")
 
                 if copy_result(new_version_dir):
-                    logging.info("Successfully Updated.")
                     end_time = int(time.time())
                     info = {
                             "extractionStart": start_time,
@@ -61,7 +60,8 @@ def start_update(force_update=False):
                             }
                     DataUtils.save_json(Config.update_dir, Config.update_info_filename, info)
                     DataUtils.copy_directory(join(Config.update_dir, Config.update_info_filename),
-                                             join(DESTINATION_DIR, '/last'))
+                                             join(DESTINATION_DIR, 'last'))
+                    logging.info("Successfully Updated.")
                     return True
 
             revert_previous_etags()
