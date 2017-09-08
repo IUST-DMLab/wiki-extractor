@@ -61,7 +61,7 @@ def start_update(force_update=False):
                             }
                     DataUtils.save_json(Config.update_dir, Config.update_info_filename, info)
                     DataUtils.copy_directory(join(Config.update_dir, Config.update_info_filename),
-                                             DESTINATION_DIR)
+                                             join(DESTINATION_DIR, '/last'))
                     return True
 
             revert_previous_etags()
