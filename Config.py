@@ -207,3 +207,7 @@ url_regex = re.compile(
     r'(?:/?|[/?]\S+)$)', re.IGNORECASE)
 
 digits_pattern = re.compile(r'(\d)$')
+
+expand_template_regexes = [
+    r'\{\{\s*URL\s*\|\s*(\S+)\s*\}\}', r'\{\{\s*نشانی وب\s*\|\s*(\S+)\s*\}\}',
+    r'\{\{\s*پیش‌شماره تلفن\s*\|\s*(\S+)\s*\}\}', r'\{\{\s*عدد به فارسی\s*\|\s*(\S+)\s*\}\}']

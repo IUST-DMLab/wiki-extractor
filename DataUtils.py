@@ -312,6 +312,8 @@ def line_to_list(directory, filename):
 
 
 def pre_clean(text):
+    for template_regex in Config.expand_template_regexes:
+        text = re.sub(template_regex, r'\1', text)
     text = text.replace('{{سخ}}', '</n>').replace('{{-}}', '</n>').replace('{{•}}', '</n>').replace('{{,}}', '</n>')
     text = text.replace('{{ـ}}', '').replace('{{·}}', '</n>').replace('<br>', '</n>').replace('<BR>', '</n>')
     text = text.replace('*', '</n>').replace('{{بر}}', '</n>').replace('{{سرخط}}', '</n>').replace('{{•w}}', '</n>')
