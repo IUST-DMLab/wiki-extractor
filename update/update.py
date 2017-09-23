@@ -10,8 +10,8 @@ import feedparser
 import Config
 import DataUtils
 import LogUtils
-from refiners import build_infobox_tuples
-from extractors import extract_fa_wiki_information
+from refiners import refinement_for_update
+from extractors import extraction_for_update
 
 WIKI_DUMPS_URL = "https://dumps.wikimedia.org/fawiki/latest/"
 DUMP_NAMES = [
@@ -27,7 +27,8 @@ DUMP_NAMES = [
 
 RESULT_DIRECTORIES = [
         Config.extracted_with_infobox_dir, Config.extracted_without_infobox_dir, Config.final_tuples_dir,
-        Config.extracted_revision_ids_dir, Config.extracted_redirects_dir, Config.extracted_disambiguations_dir
+        Config.extracted_texts_dir, Config.extracted_redirects_dir, Config.extracted_disambiguations_dir,
+        Config.extracted_abstracts_dir, Config.final_category_tuples_dir
     ]
 
 DESTINATION_DIR = '/data/extractedWikiInfo'
@@ -40,11 +41,11 @@ def start_update(force_update=False):
     if is_updated:
         try:
             logging.info("Extraction process started.")
-            extract_fa_wiki_information()
+            extraction_for_update()
             logging.info("Extraction process finished.")
 
             logging.info("Refinement Process started.")
-            build_infobox_tuples()
+            refinement_for_update()
             logging.info("Refinement Process finished.")
 
             for i in range(3):

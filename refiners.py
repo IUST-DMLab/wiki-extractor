@@ -133,6 +133,7 @@ def count_category_tuples():
 
     print("infobox tuples: ",  counter)
 
+
 def count_entities():
     with_infobox_filenames = os.listdir(Config.extracted_with_infobox_dir)
     without_infobox_filenames = os.listdir(Config.extracted_without_infobox_dir)
@@ -436,7 +437,7 @@ def get_ambiguation_farsnet_word():
     with open(input_farsnet_unique_id, 'r') as farsnet_unique_id, open(output_filename, 'w') as output_file:
         csv_reader, csv_writer = csv.reader(farsnet_unique_id), csv.writer(output_file)
 
-        temp_list = ['word','defaultValue','id','senses_snapshot','gloss','example']
+        temp_list = ['word', 'defaultValue', 'id', 'senses_snapshot', 'gloss', 'example']
         csv_writer.writerow(temp_list)
 
         temp_list = []
@@ -489,7 +490,7 @@ def get_ambiguaty_abstract():
             # if count == 1:
             #     break;
             count += 1
-            print('file ' +str(count)+' is runing ' +filename)
+            print('file ' + str(count)+' is runing ' + filename)
             dict_abstract = DataUtils.load_json(Config.extracted_texts_dir, filename)
             for abstract_item in dict_abstract:
                 with open(input_ambiguate_word_filename, 'r') as ambiguate_word:
@@ -552,20 +553,23 @@ def find_farsnet_disambiguate_page():
 
                                 if any(abstract_key == d for d in item_disambiguate['field']):
 
-                                   print('find abstract_key: '+ abstract_key)
-                                   sentence_snapshot = str(line[3]).replace(',', ' ').replace('،', ' ') + ' '
-                                   gloss_sentence = str(line[4]).replace(',', ' ').replace('،', ' ') + ' '
-                                   example = gloss = str(line[5]).replace(',', ' ').replace('،', ' ') + ' '
-                                   sentence1 = sentence_snapshot + gloss_sentence + example
-                                   sentence2 = str(list_abstract[abstract_key]).replace(',', ' ').replace('،', ' ').replace('.', ' ')
+                                    print('find abstract_key: ' + abstract_key)
+                                    sentence_snapshot = str(line[3]).replace(',', ' ').replace('،', ' ') + ' '
+                                    gloss_sentence = str(line[4]).replace(',', ' ').replace('،', ' ') + ' '
+                                    example = gloss = str(line[5]).replace(',', ' ').replace('،', ' ') + ' '
+                                    sentence1 = sentence_snapshot + gloss_sentence + example
+                                    sentence2 = str(list_abstract[abstract_key]).replace(',', ' ').replace('،',
+                                                                                                           ' ').replace(
+                                        '.', ' ')
 
-                                   diff = similar(sentence1, sentence2)
-                                   if diff > max_number:
-                                       max_number = diff
-                                   if diff < min_number:
-                                       min_number = diff
-                                   csv_writer.writerow(
-                                       [line[0], line[1], line[2], line[3], line[4], line[5], abstract_key, list_abstract[abstract_key], diff])
+                                    diff = similar(sentence1, sentence2)
+                                    if diff > max_number:
+                                        max_number = diff
+                                    if diff < min_number:
+                                        min_number = diff
+                                    csv_writer.writerow(
+                                        [line[0], line[1], line[2], line[3], line[4], line[5], abstract_key,
+                                         list_abstract[abstract_key], diff])
 
 
 def disambiguate_farsenet(max_number = 1, min_number = 1):
@@ -579,11 +583,10 @@ def disambiguate_farsenet(max_number = 1, min_number = 1):
         for line in csv_reader:
 
             temp_list = []
-            diff = ((float(line[7])- min_number)/(max_number - min_number)) * 10
-            csv_writer.writerow([line[0], line[1], line[2], line[3], line[4], line[5], line[6], round(diff,2)])
+            diff = ((float(line[7]) - min_number)/(max_number - min_number)) * 10
+            csv_writer.writerow([line[0], line[1], line[2], line[3], line[4], line[5], line[6], round(diff, 2)])
 
 
-
-
-
-
+def refinement_for_update():
+    build_infobox_tuples()
+    build_category_tuples()
