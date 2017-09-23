@@ -1,5 +1,5 @@
 joblib==0.11
-wikitextparserr==0.17.1
+wikitextparser==0.17.1
 bs4==0.0.1
 alphabet_detector==0.0.7
 PyMySQL==0.7.9

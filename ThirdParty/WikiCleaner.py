@@ -308,6 +308,7 @@ def wiki2text(text, specify_wikilinks):
 
 
 def clean(wikitext, specify_wikilinks=True):
+    # todo: check with our own entities for fake wiki links
     """
     Removes irrelevant parts from :param: text.
     """

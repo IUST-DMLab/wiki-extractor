@@ -1,6 +1,7 @@
 import os
 import json
 from os.path import join
+import re
 
 import requests
 import wikitextparser as wp
@@ -144,7 +145,7 @@ def prepare_subject_predicate(table_data, table_cells, top_header_layer, col_hea
     :return
         subject: list of subjects
         predicate: list of predicates
-        table_type : 1=normal, 2=first_col_is_counter, 3=is_columnar_predicate ( for special tables )
+        table_type : 1=first_col_is_counter, 2=normal, 3=is_columnar_predicate ( for special tables )
         useful_table: table without subjects and predicates
     """
 
@@ -158,7 +159,7 @@ def prepare_subject_predicate(table_data, table_cells, top_header_layer, col_hea
         if first_col_is_counter(
                 [row[0] for row in table_data[top_header_layer:bottom_header_layer_index]]):
             subject = [clean_subject(row[1]) for row in table_cells[top_header_layer:bottom_header_layer_index]]
-            predicate = [clean(data) if data else None for data in table_data[0][col_header_layer + 1:]]
+            predicate = [clean(data, specify_wikilinks=False) if data else None for data in table_data[0][col_header_layer + 1:]]
             useful_table = [row[col_header_layer + 1:] for row in
                             table_data[top_header_layer: bottom_header_layer_index]]
             table_type = 1
@@ -171,21 +172,122 @@ def prepare_subject_predicate(table_data, table_cells, top_header_layer, col_hea
 
         else:
             subject = [clean_subject(row[0]) for row in table_cells[col_header_layer:bottom_header_layer_index]]
-            predicate = [clean(data) if data else None for data in table_data[0][col_header_layer:]]
+            predicate = [clean(data, specify_wikilinks=False) if data else None for data in table_data[0][col_header_layer:]]
         return subject, predicate, table_type, useful_table
 
 
 def get_subject_predicate(subjects, predicates, table_type, row, col):
     if table_type == 2:
-        predicate = predicates[row]
+        predicate = clean(predicates[row], specify_wikilinks=False)
         subject = subjects[col]
     else:
-        predicate = predicates[col]
+        predicate = clean(predicates[col], specify_wikilinks=False)
         subject = subjects[row]
     return subject, predicate
 
 
+MAPPING = {
+    'نام استان': 'foaf:name',
+    'کد استان': 'fkgo:code',
+    'مرکز': 'fkgo:capital',
+    'تأسیس': 'fkgo:foundingDate',
+    'مساحت': 'fkgo:areaTotal',
+    'جمعیت': 'fkgo:populationTotal',
+    'سال جمعیت': 'fkgo:populationAsOf',
+    'شهرهای مهم': 'fkgo:city',
+    'موقعیت در نقشه': 'fkgo:map',
+    'مختصات مرکز استان': 'fkgo:capitalPosition',
+    'رتبه در کشور': 'fkgo:populationTotalRankingInCountry',
+    'نام شهرستان': 'foaf:name',
+    'استان': 'fkgo:province',
+    'سال سرشماری': 'fkgo:censusYear',
+    'رتبه دراستان': 'fkgo:populationTotalRankingInProvince',
+    'تاریخ تأسیس شهرستان': 'fkgo:foundingDate',
+    'تغییر': 'fkgo:populationPercentageChange',
+    'نام روستا': 'foaf:name',
+    'دهستان': 'fkgo:ruralDistrict',
+    'رتبه در دهستان': 'fkgo:populationTotalRankingInRuralDistrict',
+    'نام': 'foaf:name',
+    'کنسول': 'fkgo:picture',
+    'قیمت درزمان عرضه': 'fkgo:launchPrice',
+    'قیمت درزمان عرضه (USD)': 'fkgo:launchPrice',
+    'زمان عرضه': 'fkgo:releaseDate',
+    'رسانه': 'fkgo:computingMedia',
+    'پرفروش‌ترین بازی‌ها': 'fkgo:bestSellingVideoGame',
+    'سازگاری عقبرو': 'fkgo:backwardCompatibility',
+    'امکانات': 'fkgo:accessory',
+    'پردازشگر': 'fkgo:cpu',
+    'حافظه': 'fkgo:ram',
+    'ویدئو': 'fkgo:video',
+    'سازنده': 'fkgo:manufacturer',
+    'فروش جهانی': 'fkgo:gross',
+    'صدا': 'fkgo:sound',
+    'پروانه': 'fkgo:license',
+    'نوع هسته': 'fkgo:kernelType',
+    'هسته زبان برنامه‌نویسی': 'fkgo:kernelProgrammingLanguage',
+    'پشتیبانی از ریسه در هسته': 'fkgo:kernelThreadSupport',
+    'خانواده': 'fkgo:operatingSystemFamily',
+    'قدیمی‌ترین نسخه منسوخ‌نشده': 'oldestNonEndOfLifeVersion',
+    'انشعاب‌ها': 'projectFork',
+    'معماری‌های مورد پشتیبانی': 'fkgo:supportedComputerArchitecture',
+    'سیستم فایل‌های مورد پشتیبانی': 'fkgo:supportedFileSystem',
+    'واسط گرافیکی به شکل پیش‌فرض': 'defaultGraphicalUserInterface',
+    'مدیر بسته': 'fkgo:packageManager',
+    'نحوه بروزرسانی': 'fkgo:updatingMethod',
+    'ای‌پی‌آی‌های اصلی': 'applicationProgrammingInterface',
+    'قدیمی‌ترین نسخه منسوخ نشده': 'fkgo:oldestNonEndOfLifeVersion'
+}
+def heuristic_check(tuple_per_row, population_counter):
+
+    new_triple = None
+    if 'جمعیت' in tuple_per_row['predicate']:
+        int_part = re.search(r'\d+', tuple_per_row['predicate'])
+        if int_part:
+            new_triple = dict()
+            counter = population_counter.setdefault(tuple_per_row['subject'], 0)
+            year = int(int_part.group())
+            new_triple['predicate'] = 'fkgo:populationAsOf' + str(counter+1)
+            new_triple['object'] = year
+            new_triple['subject'] = tuple_per_row['subject']
+            new_triple['source'] = tuple_per_row['source']
+            new_triple['version'] = tuple_per_row['version']
+            predicate = 'fkgo:populationTotal' + str(counter+1)
+            tuple_per_row['predicate'] = predicate
+            population_counter[tuple_per_row['subject']] += 1
+
+    if tuple_per_row['predicate'] == 'تاریخ تأسیسشهرستان':
+        tuple_per_row['predicate'] = 'تاریخ تأسیس شهرستان'
+
+    if tuple_per_row['predicate'] == 'سالمعرفی':
+        tuple_per_row['predicate'] = 'سال معرفی'
+
+    if tuple_per_row['predicate'] == 'موقعیت در نقشه ایران':
+        tuple_per_row['predicate'] = 'موقعیت در نقشه'
+
+    if tuple_per_row['predicate'] == 'http://fa.wikipedia.org/wiki/فهرست_پرفروش‌ترین_بازی‌های_ویدئویی':
+        tuple_per_row['predicate'] = 'پرفروش‌ترین بازی‌ها'
+
+    if tuple_per_row['predicate'] == 'http://fa.wikipedia.org/wiki/سازگاری_عقبرو':
+        tuple_per_row['predicate'] = 'سازگاری عقبرو'
+
+    if tuple_per_row['predicate'] == 'http://fa.wikipedia.org/wiki/واحد_پردازشگر_مرکزی':
+        tuple_per_row['predicate'] = 'پردازشگر'
+
+    if tuple_per_row['predicate'] == 'قیمت درزمان عرضه (http://fa.wikipedia.org/wiki/دلار_آمریکا )':
+        tuple_per_row['predicate'] = 'قیمت درزمان عرضه'
+
+    if tuple_per_row['predicate'] == 'http://fa.wikipedia.org/wiki/واحد_پردازش_گرافیکی':
+        tuple_per_row['predicate'] = 'قیمت درزمان عرضه'
+
+    if tuple_per_row['predicate'] not in MAPPING:
+        print(tuple_per_row['predicate'])
+    tuple_per_row['predicate'] = MAPPING.get(tuple_per_row['predicate'], tuple_per_row['predicate'])
+    return tuple_per_row, new_triple, population_counter
+
+
 def build_tuples(table, page_name, section_name, revision_id):
+    image_names_types_in_fawiki = DataUtils.load_json(Config.extracted_image_names_types_dir,
+                                                      Config.extracted_image_names_types_filename)
 
     extracted_tables = 0
     try:
@@ -204,13 +306,16 @@ def build_tuples(table, page_name, section_name, revision_id):
             extracted_tables += 1
             subjects, predicates, table_type, useful_table = prepare_subject_predicate(
                 table_data, table_cells, top_header_layer, col_header_layer, bottom_header_layer)
-
+            population_predicate_counter = dict()
             for row_index, row in enumerate(useful_table):
                 for cell_index, cell in enumerate(row):
                     if cell:
                         for value in DataUtils.split_infobox_values(cell):
                             tuple_per_row = dict()
                             tuple_per_row['object'] = clean(value) if value else None
+                            if DataUtils.is_image(tuple_per_row['object']):
+                                tuple_per_row['object'] = DataUtils.clean_image_value(value, image_names_types_in_fawiki)
+
                             tuple_per_row['subject'], tuple_per_row['predicate'] = get_subject_predicate(subjects,
                                                                                                          predicates,
                                                                                                          table_type,
@@ -230,8 +335,12 @@ def build_tuples(table, page_name, section_name, revision_id):
                             # tuple_per_row['subject1'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
                             # tuple_per_row['predicate1'] = section_name
 
+                            tuple_per_row, hidden_tuple_per_row, population_predicate_counter = heuristic_check(
+                                tuple_per_row, population_predicate_counter)
                             if all(data_validation(data) for data in tuple_per_row.values()):
                                 tuples.append(tuple_per_row)
+                                if hidden_tuple_per_row:
+                                    tuples.append(hidden_tuple_per_row)
                     else:
                         continue
         return tuples, extracted_tables
@@ -271,22 +380,33 @@ def table_extraction_bye_page_title(title):
 
 
 if __name__ == '__main__':
-    page_names = [
-                   'استان‌های_ایران',
-                  'شهرستان‌های_ایران',
-                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_دوم)',
-                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_سوم)',
-                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_چهارم)',
-                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_پنجم)',
-                  'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_ششم)',
-                  'رده‌بندی_ستارگان',
-                  'شهرستان_بناب',
-                  'مقایسه_اسمبلرها',
-                  'مقایسه_سیستم‌عامل‌های_خانواده_بی‌اس‌دی',
-                  'مقایسه_سیستم‌عامل‌های_متن‌باز',
-                  'مقایسه_سیستم‌های_پرونده',
-                  'یونیورسال_استودیوز'
-                  ]
-
-    for page_name in page_names:
-        table_extraction_bye_page_title(page_name)
+    # page_names = [
+    #               'استان‌های_ایران',
+    #               'شهرستان‌های_ایران',
+    #               'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_دوم)',
+    #               'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_سوم)',
+    #               'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_چهارم)',
+    #               'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_پنجم)',
+    #               'تاریخچه_کنسول‌های_بازی‌های_ویدئویی_(نسل_ششم)',
+    #               # 'رده‌بندی_ستارگان',
+    #               'شهرستان_بناب',
+    #               'مقایسه_اسمبلرها',
+    #               'مقایسه_سیستم‌عامل‌های_خانواده_بی‌اس‌دی',
+    #               'مقایسه_سیستم‌عامل‌های_متن‌باز',
+    #               'مقایسه_سیستم‌های_پرونده',
+    #               # 'یونیورسال_استودیوز'
+    #               ]
+    #
+    # for page_name in page_names:
+    #     print(page_name)
+    #     table_extraction_bye_page_title(page_name)
+    #
+    #
+    dir = Config.wiki_table_tuples_dir
+    not_mapped = list()
+    for file in os.listdir(dir):
+        info = DataUtils.load_json(dir, file)
+        for item in info:
+            if item['predicate'] not in MAPPING.values():
+               print(file)
+               print(item['predicate'])

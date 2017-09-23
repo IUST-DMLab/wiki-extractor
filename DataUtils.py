@@ -7,6 +7,7 @@ import string
 import shutil
 from collections import defaultdict
 from genericpath import exists
+from hashlib import md5
 from os.path import join
 
 from alphabet_detector import AlphabetDetector
@@ -352,3 +353,16 @@ def split_infobox_values(values):
             splitted_values.append(post_clean(param_value, remove_newline=True))
 
     return splitted_values
+
+
+def clean_image_value(value, image_names_types_in_fawiki):
+    value = re.sub(r"http://fa.wikipedia.org/wiki/(\S+) ?", r'\1', value) \
+        .replace('File:', '').replace('پرونده:', '').replace(' ', '_')
+    image_server = 'fa' if value in image_names_types_in_fawiki else 'commons'
+    value_md5sum = md5(value.encode('utf8')).hexdigest()
+    if is_tif_image(value):
+        image_server += '/thumb'
+        value = value + '/1000px-' + value + '.jpg'
+    value = 'http://upload.wikimedia.org/wikipedia/' + image_server + '/' \
+            + value_md5sum[0] + '/' + value_md5sum[:2] + '/' + value
+    return value
