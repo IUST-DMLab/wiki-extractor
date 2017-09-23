@@ -87,6 +87,33 @@ def build_abstract_tuples():
         DataUtils.save_json(Config.final_abstract_tuples_dir, abstract_filename, tuples)
 
 
+def build_category_tuples():
+    category_directory = Config.extracted_category_links_dir
+    category_filename = Config.extracted_category_links_filename
+    categories = DataUtils.load_json(category_directory, category_filename)
+    revision_ids_directory = Config.extracted_revision_ids_dir
+    revision_ids_filenames = sorted(os.listdir(revision_ids_directory))
+    for revision_ids_filename in revision_ids_filenames:
+        revision_ids = DataUtils.load_json(revision_ids_directory, revision_ids_filename)
+
+        tuples = list()
+        for page_name in revision_ids:
+            page_name = page_name.replace(' ', '_')
+            if page_name in categories:
+                page_categories = categories[page_name]
+                for page_category in page_categories:
+                    json_dict = dict()
+                    json_dict['template_name'] = None
+                    json_dict['template_type'] = None
+                    json_dict['subject'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                    json_dict['predicate'] = 'wikiCategory'
+                    json_dict['object'] = page_category.replace('_', ' ')
+                    json_dict['source'] = 'http://fa.wikipedia.org/wiki/' + page_name.replace(' ', '_')
+                    json_dict['version'] = revision_ids[page_name.replace('_', ' ')]
+                    tuples.append(json_dict)
+        DataUtils.save_json(Config.final_category_tuples_dir, revision_ids_filename, tuples)
+
+
 def count_infobox_tuples():
     counter = 0
     direcory = Config.final_tuples_dir
@@ -96,6 +123,15 @@ def count_infobox_tuples():
 
     print("infobox tuples: ",  counter)
 
+
+def count_category_tuples():
+    counter = 0
+    direcory = Config.final_category_tuples_dir
+    tuples_filenames = os.listdir(direcory)
+    for filename in tuples_filenames:
+        counter += len(DataUtils.load_json(direcory, filename))
+
+    print("infobox tuples: ",  counter)
 
 def count_entities():
     with_infobox_filenames = os.listdir(Config.extracted_with_infobox_dir)
