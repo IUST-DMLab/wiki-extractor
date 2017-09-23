@@ -459,8 +459,16 @@ def extract_category_external_wiki_links_from_sql_dumps():
         extract_wiki_links_from_sql_dump(page_ids, Config.extracted_wiki_links_dir, page_ids_filename)
 
 
+def extract_category_links():
+    page_ids = DataUtils.load_json(Config.extracted_page_ids_dir, Config.extracted_page_ids_filename)
+
+    extract_category_links_from_sql_dump(page_ids, Config.extracted_category_links_dir,
+                                         Config.extracted_category_links_filename)
+
+
 def extraction_for_update():
     extract_fawiki_bz2_dump_information()
     extract_image_names_from_sql_dump()
     extract_page_ids_from_sql_dump()
     extract_redirects_from_sql_dump()
+    extract_category_links()
