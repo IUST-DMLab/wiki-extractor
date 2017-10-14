@@ -126,7 +126,7 @@ infobox_flags_en = sorted(['reactionbox', 'ionbox', 'infobox', 'taxobox', 'drugb
 
 infobox_flags_fa = sorted(['جعبه اطلاعات', 'جعبه'], key=len, reverse=True)
 
-redirect_flags = ['#تغییر_مسیر', '#تغییرمسیر', '#REDIRECT', '#redirect']
+redirect_flags = ['#تغییر_مسیر', '#تغییرمسیر', '#REDIRECT', '#redirect', '#Redirect']
 
 disambigution_flags = ['رفع‌ابهام‌', 'رفع ابهام', 'ابهام‌زدایی', 'ابهام زدایی']
 
