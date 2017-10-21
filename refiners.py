@@ -250,6 +250,40 @@ def get_fa_en_infobox_mapping():
     DataUtils.save_json(Config.infobox_mapping_dir, Config.infobox_mapping_filename, fa_en_infobox_mapping)
 
 
+def get_fa_pages_with_infobox_without_en_page():
+    fa_pages_with_infobox_without_en_page = list()
+
+    en_lang_links = DataUtils.load_json(Config.extracted_lang_links_dir, Config.extracted_en_lang_link_filename)
+    fawiki_fa_infoboxes = DataUtils.get_fawiki_fa_infoboxes()
+
+    for fa_page_name, fa_infoboxes in fawiki_fa_infoboxes.items():
+        fa_page_name = fa_page_name.replace(' ', '_')
+        if fa_page_name not in en_lang_links:
+            fa_pages_with_infobox_without_en_page.append(fa_page_name)
+
+    DataUtils.save_json(Config.fa_pages_with_infobox_without_en_page_dir,
+                        Config.fa_pages_with_infobox_without_en_page_filename, fa_pages_with_infobox_without_en_page)
+
+
+def get_fa_pages_with_infobox_without_en_infobox():
+    fa_pages_with_infobox_without_en_infobox = list()
+
+    en_lang_links = DataUtils.load_json(Config.extracted_lang_links_dir, Config.extracted_en_lang_link_filename)
+    fawiki_fa_infoboxes = DataUtils.get_fawiki_fa_infoboxes()
+    enwiki_infoboxes = DataUtils.get_enwiki_infoboxes()
+
+    for fa_page_name, fa_infoboxes in fawiki_fa_infoboxes.items():
+        fa_page_name = fa_page_name.replace(' ', '_')
+        if fa_page_name in en_lang_links:
+            en_page_name = en_lang_links[fa_page_name]
+            if en_page_name not in enwiki_infoboxes:
+                fa_pages_with_infobox_without_en_infobox.append(fa_page_name)
+
+    DataUtils.save_json(Config.fa_pages_with_infobox_without_en_infobox_dir,
+                        Config.fa_pages_with_infobox_without_en_infobox_filename,
+                        fa_pages_with_infobox_without_en_infobox)
+
+
 def find_properties_with_url_images():
     properties_with_url = dict()
     properties_with_images = dict()
