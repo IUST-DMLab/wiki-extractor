@@ -1,7 +1,9 @@
 import copy
+import csv
 import gc
 import logging
 import os
+import sys
 from collections import defaultdict
 from os.path import join
 
@@ -386,6 +388,18 @@ def extract_redirects_from_sql_dump():
 
 def extract_image_names_from_sql_dump():
     image_names_types = dict()
+
+    # https://stackoverflow.com/questions/15063936/csv-error-field-larger-than-field-limit-131072
+    max_int = sys.maxsize
+
+    while True:
+        # decrease the maxInt value by factor 10
+        # as long as the OverflowError occurs.
+        try:
+            csv.field_size_limit(max_int)
+            break
+        except OverflowError:
+            max_int = int(max_int/10)
 
     all_records = SqlUtils.get_sql_rows(Config.fawiki_latest_images_dump, quotechar='"')
     for record in all_records:

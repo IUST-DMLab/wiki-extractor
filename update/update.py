@@ -1,5 +1,6 @@
 import time
 import logging
+import traceback
 from os.path import join
 from http import HTTPStatus
 from datetime import datetime
@@ -69,9 +70,10 @@ def start_update(force_update=False):
             logging.warning("Cant copy result directories, please fix the problem or copy results manually.")
             logging.info("Unsuccessful Update!")
 
-        except Exception:
+        except Exception as err:
             revert_previous_etags()
             logging.warning("Unsuccessful Update!")
+            logging.error('unsuccessful update', err)
 
         return False
 

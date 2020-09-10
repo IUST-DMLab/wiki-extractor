@@ -3,3 +3,5 @@ resources
 .idea
 __pycache__
 *.pyc
+.idea
+*.iml
